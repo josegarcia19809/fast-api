@@ -6,3 +6,5 @@ app = FastAPI()
 @app.get("/")
 def read_root():
     return {"Mensaje": "¡FastAPI en Miniconda funciona correctamente!"}
+
+

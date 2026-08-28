@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Query, Body, HTTPException, Path, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 app = FastAPI(title="MINI BLOG")
@@ -28,8 +28,20 @@ class PostBase(BaseModel):
     content: Optional[str] = "Contenido no disponible"
 
 
-class PostCreate(PostBase):
-    pass
+class PostCreate(BaseModel):
+    title: str = Field(
+        ...,
+        description="Titulo para crear un post",
+        min_length=3,
+        max_length=100,
+        examples=["Mi primer post con Fast API"]
+    )
+    content: Optional[str] = Field(
+        default="Contenido no disponible",
+        description="Contenido para crear un post",
+        min_length=10,
+        examples=["Este es un contenido válido"]
+    )
 
 
 class PostUpdate(BaseModel):

@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sistema Médico</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-100 min-h-screen">
+
+    <!-- Encabezado -->
+    <header class="bg-blue-700 text-white shadow-lg">
+
+        <div class="max-w-6xl mx-auto px-6 py-6">
+
+            <h1 class="text-3xl font-bold">
+                👨‍⚕️ Sistema Médico
+            </h1>
+
+            <p class="text-blue-100 mt-2">
+                Panel de gestión hospitalaria
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- Contenido principal -->
+    <main class="max-w-6xl mx-auto px-6 py-10">
+
+        <!-- Bienvenida -->
+        <section class="bg-white rounded-2xl shadow-md p-8 mb-8">
+
+            <h2 class="text-2xl font-bold text-slate-800 mb-3">
+                Bienvenido, Doctor 👋
+            </h2>
+
+            <p class="text-slate-600">
+                Desde este sistema podrá acceder a la información
+                de sus pacientes y gestionar sus consultas.
+            </p>
+
+        </section>
+
+
+        <!-- Opciones -->
+        <section>
+
+            <h2 class="text-xl font-bold text-slate-800 mb-5">
+                📋 Opciones del sistema
+            </h2>
+
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+
+                <!-- Inicio -->
+                <a href="/doctores/"
+                   class="bg-white rounded-2xl p-6 shadow-md
+                          hover:shadow-xl hover:-translate-y-1
+                          transition duration-300">
+
+                    <div class="text-4xl mb-4">
+                        👨‍⚕️
+                    </div>
+
+                    <h3 class="text-lg font-bold text-slate-800">
+                        Inicio
+                    </h3>
+
+                    <p class="text-slate-500 mt-2">
+                        Página principal de doctores.
+                    </p>
+
+                </a>
+
+
+                <!-- Sistema Médico -->
+                <a href="/doctores/sistema-medico"
+                   class="bg-white rounded-2xl p-6 shadow-md
+                          hover:shadow-xl hover:-translate-y-1
+                          transition duration-300">
+
+                    <div class="text-4xl mb-4">
+                        🏥
+                    </div>
+
+                    <h3 class="text-lg font-bold text-slate-800">
+                        Sistema Médico
+                    </h3>
+
+                    <p class="text-slate-500 mt-2">
+                        Accede al sistema de gestión hospitalaria.
+                    </p>
+
+                </a>
+
+
+                <!-- Pacientes -->
+                <a href="/doctores/pacientes"
+                   class="bg-white rounded-2xl p-6 shadow-md
+                          hover:shadow-xl hover:-translate-y-1
+                          transition duration-300">
+
+                    <div class="text-4xl mb-4">
+                        🧑‍🤝‍🧑
+                    </div>
+
+                    <h3 class="text-lg font-bold text-slate-800">
+                        Pacientes
+                    </h3>
+
+                    <p class="text-slate-500 mt-2">
+                        Consulta la información de tus pacientes.
+                    </p>
+
+                </a>
+
+
+                <!-- Citas -->
+                <a href="/doctores/citas"
+                   class="bg-white rounded-2xl p-6 shadow-md
+                          hover:shadow-xl hover:-translate-y-1
+                          transition duration-300">
+
+                    <div class="text-4xl mb-4">
+                        📅
+                    </div>
+
+                    <h3 class="text-lg font-bold text-slate-800">
+                        Citas Médicas
+                    </h3>
+
+                    <p class="text-slate-500 mt-2">
+                        Revisa y organiza tus citas.
+                    </p>
+
+                </a>
+
+
+                <!-- Historial -->
+                <a href="/doctores/historial"
+                   class="bg-white rounded-2xl p-6 shadow-md
+                          hover:shadow-xl hover:-translate-y-1
+                          transition duration-300">
+
+                    <div class="text-4xl mb-4">
+                        📋
+                    </div>
+
+                    <h3 class="text-lg font-bold text-slate-800">
+                        Historial Clínico
+                    </h3>
+
+                    <p class="text-slate-500 mt-2">
+                        Consulta diagnósticos y tratamientos.
+                    </p>
+
+                </a>
+
+
+                <!-- Recetas -->
+                <a href="/doctores/recetas"
+                   class="bg-white rounded-2xl p-6 shadow-md
+                          hover:shadow-xl hover:-translate-y-1
+                          transition duration-300">
+
+                    <div class="text-4xl mb-4">
+                        💊
+                    </div>
+
+                    <h3 class="text-lg font-bold text-slate-800">
+                        Recetas Médicas
+                    </h3>
+
+                    <p class="text-slate-500 mt-2">
+                        Crea y consulta recetas médicas.
+                    </p>
+
+                </a>
+
+
+                <!-- Emergencias -->
+                <a href="/doctores/emergencias"
+                   class="bg-white rounded-2xl p-6 shadow-md
+                          hover:shadow-xl hover:-translate-y-1
+                          transition duration-300">
+
+                    <div class="text-4xl mb-4">
+                        🚑
+                    </div>
+
+                    <h3 class="text-lg font-bold text-slate-800">
+                        Emergencias
+                    </h3>
+
+                    <p class="text-slate-500 mt-2">
+                        Acceso rápido a atención prioritaria.
+                    </p>
+
+                </a>
+
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- Pie de página -->
+    <footer class="text-center text-slate-500 py-8">
+
+        <p>
+            🏥 Sistema Médico · FastAPI
+        </p>
+
+    </footer>
+
+</body>
+
+</html>
+

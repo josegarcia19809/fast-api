@@ -1,0 +1,14 @@
+### Inicio
+GET http://127.0.0.1:8000/
+
+
+### Libro 1
+GET http://127.0.0.1:8000/libro/1234
+
+
+### Libro 2
+GET http://127.0.0.1:8000/libro/5678
+
+
+### Mandando un parámetro incorrecto
+GET http://127.0.0.1:8000/libro/abcd

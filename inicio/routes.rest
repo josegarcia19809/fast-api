@@ -1,0 +1,7 @@
+
+# Conexión a la raíz
+GET http://127.0.0.1:8000
+
+
+### Obtener libro
+GET http://127.0.0.1:8000/libro/1234

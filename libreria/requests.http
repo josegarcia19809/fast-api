@@ -1,0 +1,6 @@
+### Obtener libro
+GET http://127.0.0.1:8000/libro/1234
+
+
+### Obtener libro
+GET http://127.0.0.1:8000/libro/1234/1

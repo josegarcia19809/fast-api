@@ -1,0 +1,207 @@
+### ==========================================
+### PRUEBAS API - JUGADORES
+### ==========================================
+
+
+### 1. TODOS LOS JUGADORES
+### Se esperan los 12 jugadores
+GET http://127.0.0.1:8000/jugadores
+
+
+### 1. TODOS LOS JUGADORES - VARIANTE 2
+GET http://127.0.0.1:8000/jugadores
+
+
+### ==========================================
+### 2. JUGADORES POR POSICIÓN
+### ==========================================
+
+### Mediocampistas
+### Se esperan 5 jugadores
+GET http://127.0.0.1:8000/jugadores/posicion/Mediocampista
+
+
+### Defensores
+### Se esperan 3 jugadores
+GET http://127.0.0.1:8000/jugadores/posicion/Defensor
+
+
+### Posición inexistente
+### Se espera []
+GET http://127.0.0.1:8000/jugadores/posicion/Portero
+
+
+### ==========================================
+### 3. GOLES POR POSICIÓN
+### ==========================================
+
+### Mediocampistas
+### Se espera total_goles = 28
+GET http://127.0.0.1:8000/jugadores/goles/Mediocampista
+
+
+### Defensores
+### Se espera total_goles = 4
+GET http://127.0.0.1:8000/jugadores/goles/Defensor
+
+
+### Posición inexistente
+### Se espera total_goles = 0
+GET http://127.0.0.1:8000/jugadores/goles/Portero
+
+
+### ==========================================
+### 4. CANTIDAD DE JUGADORES POR POSICIÓN
+### ==========================================
+
+### Mediocampistas
+### Se espera cantidad = 5
+GET http://127.0.0.1:8000/jugadores/cantidad/Mediocampista
+
+
+### Defensores
+### Se espera cantidad = 3
+GET http://127.0.0.1:8000/jugadores/cantidad/Defensor
+
+
+### Posición inexistente
+### Se espera cantidad = 0
+GET http://127.0.0.1:8000/jugadores/cantidad/Portero
+
+
+### ==========================================
+### 5. PROMEDIO DE GOLES POR POSICIÓN
+### ==========================================
+
+### Mediocampistas
+### Se espera promedio = 5.6
+GET http://127.0.0.1:8000/jugadores/promedio/Mediocampista
+
+
+### Delanteros
+### Se espera promedio = 9.75
+GET http://127.0.0.1:8000/jugadores/promedio/Delantero
+
+
+### Posición inexistente
+### Se espera promedio = 0
+GET http://127.0.0.1:8000/jugadores/promedio/Portero
+
+
+### ==========================================
+### 6. BUSCAR POR NÚMERO
+### ==========================================
+
+### Número 20
+### Se espera Toni Kroos
+GET http://127.0.0.1:8000/jugadores/numero/20
+
+
+### Número 22
+### Se espera Marquinhos
+GET http://127.0.0.1:8000/jugadores/numero/22
+
+
+### Número inexistente
+### Se espera "Jugador no encontrado"
+GET http://127.0.0.1:8000/jugadores/numero/15
+
+
+### ==========================================
+### 7. JUGADORES CON MÁS DE X GOLES
+### ==========================================
+
+### Más de 10 goles
+### Se esperan Cristiano Ronaldo y Luka Modric
+GET http://127.0.0.1:8000/jugadores/goles/mayores/10
+
+
+### Más de 12 goles
+### Se espera solamente Luka Modric
+GET http://127.0.0.1:8000/jugadores/goles/mayores/12
+
+
+### Más de 15 goles
+### Se espera []
+GET http://127.0.0.1:8000/jugadores/goles/mayores/15
+
+
+### ==========================================
+### 8. JUGADORES CON MENOS DE X GOLES
+### ==========================================
+
+### Menos de 3 goles
+### Se esperan Kanté, Van Dijk, Ramos y Marquinhos
+GET http://127.0.0.1:8000/jugadores/goles/menores/3
+
+
+### Menos de 5 goles
+### Se esperan 6 jugadores
+GET http://127.0.0.1:8000/jugadores/goles/menores/5
+
+
+### Menos de 1 gol
+### Se espera []
+GET http://127.0.0.1:8000/jugadores/goles/menores/1
+
+
+### ==========================================
+### 9. SUMAR GOLES A PARTIR DE UN NÚMERO
+### ==========================================
+
+### Número >= 15
+### Se consideran Kroos y Marquinhos
+### Se espera total_goles = 5
+GET http://127.0.0.1:8000/jugadores/numero/15/goles
+
+
+### Número >= 7
+### Se esperan 43 goles
+GET http://127.0.0.1:8000/jugadores/numero/7/goles
+
+
+### Número >= 1
+### Se esperan todos los jugadores
+### Se espera total_goles = 71
+GET http://127.0.0.1:8000/jugadores/numero/1/goles
+
+
+### ==========================================
+### 10. CANTIDAD DE JUGADORES CON MÁS DE X GOLES
+### ==========================================
+
+### Más de 5 goles
+### Se espera cantidad = 4
+GET http://127.0.0.1:8000/jugadores/goles/5/cantidad
+
+
+### Más de 4 goles
+### Se espera cantidad = 5
+GET http://127.0.0.1:8000/jugadores/goles/4/cantidad
+
+
+### Más de 12 goles
+### Se espera cantidad = 1
+GET http://127.0.0.1:8000/jugadores/goles/12/cantidad
+
+
+### ==========================================
+### 11. PROMEDIO DE GOLES SEGÚN NÚMERO
+### ==========================================
+
+### Número > 15
+### Se consideran Kroos y Marquinhos
+### Se espera promedio = 2.5
+GET http://127.0.0.1:8000/jugadores/numero/15/promedio
+
+
+### Número > 10
+### Se consideran Frenkie, Kroos y Marquinhos
+### Se espera promedio = 3.0
+GET http://127.0.0.1:8000/jugadores/numero/10/promedio
+
+
+### Número > 21
+### Se considera solamente Marquinhos
+### Se espera promedio = 1.0
+GET http://127.0.0.1:8000/jugadores/numero/21/promedio

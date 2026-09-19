@@ -1,0 +1,15 @@
+###
+http://localhost:8000/libros
+
+###
+http://localhost:8000/libros?pagina=3&cantidad=5
+
+### Sin proporcionar cantidad
+http://localhost:8000/libros/opcional
+
+
+### Proporcionando cantidad
+http://localhost:8000/libros/opcional?cantidad=20
+
+###
+http://localhost:8000/categorias/programacion/libros?pagina=2&cantidad=5

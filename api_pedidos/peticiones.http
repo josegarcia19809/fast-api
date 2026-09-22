@@ -1,0 +1,37 @@
+### Obtener todos los pedidos
+GET http://localhost:8000/pedidos
+
+
+### 1. Obtener pedidos pendientes
+GET http://localhost:8000/pedidos?estado=pendiente
+
+
+### 2. Obtener pedidos enviados
+GET http://localhost:8000/pedidos?estado=enviado
+
+
+### 3. Obtener pedidos entregados
+GET http://localhost:8000/pedidos?estado=entregado
+
+
+### 4. Obtener pedidos cancelados
+GET http://localhost:8000/pedidos?estado=cancelado
+
+
+### 5. Obtener pedidos enviados de Toluca
+GET http://localhost:8000/pedidos?estado=enviado&ciudad=Toluca
+
+### Pedidos de Toluca
+GET http://localhost:8000/pedidos?ciudad=Toluca
+
+
+### Pedidos de Metepec
+GET http://localhost:8000/pedidos?ciudad=Metepec
+
+
+### Pedidos entregados en Toluca
+GET http://localhost:8000/pedidos?estado=entregado&ciudad=Toluca
+
+
+### Pedidos cancelados en Toluca
+GET http://localhost:8000/pedidos?estado=cancelado&ciudad=Toluca

@@ -122,9 +122,10 @@ peliculas = [
 
 
 # 1. Obtener todas las películas
-@app.get("/peliculas",
-         status_code=status.HTTP_200_OK
-         )
+@app.get("/peliculas", tags=["peliculas"],
+         summary="Obtener todas las películas",
+         description="Este endpoint permite consultar todas las películas disponibles.",
+         status_code=status.HTTP_200_OK)
 def obtener_peliculas(
         genero: Optional[Genero] = None,
         plataforma: Optional[str] = None
@@ -147,7 +148,11 @@ def obtener_peliculas(
 
 
 # 2. Buscar películas por género
-@app.get("/peliculas/generos/{genero}", status_code=status.HTTP_200_OK)
+@app.get("/peliculas/generos/{genero}", tags=["peliculas", "generos"],
+         summary="Buscar películas por género",
+         description="Este endpoint permite obtener las películas que pertenecen a un "
+                     "género específico.",
+         status_code=status.HTTP_200_OK)
 def peliculas_por_genero(genero: Genero):
     resultados = [
         pelicula
@@ -195,7 +200,8 @@ def peliculas_desde(anio: int):
 
 
 # 6. Obtener una película por ID
-@app.get("/peliculas/{id}", status_code=status.HTTP_404_NOT_FOUND)
+@app.get("/peliculas/{id}", tags=["peliculas", "detalle"],
+         status_code=status.HTTP_404_NOT_FOUND)
 def obtener_pelicula(id: int, response: Response):
     for pelicula in peliculas:
         if pelicula["id"] == id:

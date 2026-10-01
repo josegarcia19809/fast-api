@@ -1,0 +1,27 @@
+###
+http://127.0.0.1:8000/peliculas/generos/ciencia-ficcion
+
+###
+GET http://127.0.0.1:8000/peliculas
+
+
+###
+GET http://127.0.0.1:8000/peliculas?genero=accion
+
+###
+GET http://127.0.0.1:8000/peliculas?genero=accion&plataforma=Disney+
+
+
+###
+GET http://127.0.0.1:8000/peliculas/5
+
+
+###
+GET http://127.0.0.1:8000/peliculas/50
+
+###
+GET http://127.0.0.1:8000/peliculas/generos/accion
+
+
+###
+GET http://127.0.0.1:8000/peliculas/generos/terror

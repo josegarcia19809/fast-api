@@ -1,1 +1,1 @@
-Complete FastAPI masterclass from scratch: Routers
+Complete FastAPI masterclass from scratch: Parameters

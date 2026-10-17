@@ -1,1 +1,7 @@
-Complete FastAPI masterclass from scratch: Parameters
+Complete FastAPI masterclass from scratch: Creación de usuarios en SQLite
+
+
+
+
+
+pip install passlib bcrypt argon2-cffi-25.1.0

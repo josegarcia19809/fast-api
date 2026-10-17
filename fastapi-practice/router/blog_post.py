@@ -60,3 +60,7 @@ def create_comment(
         'version': v,
         'comment_title': comment_title,
     }
+
+
+def required_functionality():
+    return {"message", "Learning FastAPI is important"}

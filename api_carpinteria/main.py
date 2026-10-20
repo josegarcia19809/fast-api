@@ -7,6 +7,10 @@ from fastapi.staticfiles import StaticFiles
 
 from database import SessionLocal
 
+from fastapi import HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy import text
+
 app = FastAPI(
     title="API de la Carpintería",
     description="Consulta los productos disponibles."
@@ -46,6 +50,40 @@ app.mount(
     StaticFiles(directory=str(UPLOADS_DIR)),
     name="uploads",
 )
+
+
+class Producto(BaseModel):
+    nombre: str
+    material: str
+    precio: float = Field(gt=0)
+    existencias: int = Field(ge=0)
+
+
+@app.post("/api/productos")
+def agregar_producto(
+        producto: Producto,
+        db: Session = Depends(get_db)
+):
+    consulta = text("""
+                    INSERT INTO productos (nombre, material, precio, existencias)
+                    VALUES (:nombre, :material, :precio, :existencias)
+                    """)
+
+    try:
+        resultado = db.execute(consulta, producto.model_dump())
+        db.commit()
+
+        return {
+            "mensaje": "Producto agregado correctamente",
+            "id": resultado.lastrowid
+        }
+
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Error al agregar el producto"
+        )
 
 
 @app.get("/api/productos")

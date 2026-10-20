@@ -1,1 +1,1 @@
-API Carpintería: servir imágenes estáticas
+API Carpintería: Registro de productos

@@ -1,1 +1,1 @@
-API Carpintería: Mostrar todos los productos de una BD con MySQL
+API Carpintería: servir imágenes estáticas

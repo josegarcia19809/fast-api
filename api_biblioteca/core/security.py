@@ -43,7 +43,7 @@ def decode_token(token: str) -> dict:
     return playload
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
     try:
         playload = decode_token(token)
         sub: Optional[str] = playload.get("sub")

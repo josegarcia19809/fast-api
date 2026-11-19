@@ -1,34 +1,29 @@
+from fastapi import FastAPI
 
-import os
-from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from google import genai
-
-load_dotenv()
-
-app = FastAPI()
-
-cliente = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
+from routers import jugadores, chat
+from fastapi.middleware.cors import CORSMiddleware
+app = FastAPI(
+    title="API de Jugadores con Gemini",
+    description="API de estadísticas de fútbol con asistente de IA y Tool Calling",
+    version="1.1.0"
 )
 
-class Pregunta(BaseModel):
-    mensaje: str
+# Configuración de CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:4321",
+        "http://127.0.0.1:4321"
+    ],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
+)
 
-@app.post("/api/chat")
-def consultar_gemini(pregunta: Pregunta)-> str | None:
-    try:
-        respuesta = cliente.interactions.create(
-            model="gemini-3.5-flash",
-            input=pregunta.mensaje
-        )
+app.include_router(jugadores.router)
+app.include_router(chat.router)
 
-        return respuesta.output_text
 
-    except Exception as error:
-        raise HTTPException(
-            status_code=500,
-            detail=str(error)
-        )
-
+@app.get("/")
+def inicio():
+    return {"mensaje": "API de jugadores con Gemini"}

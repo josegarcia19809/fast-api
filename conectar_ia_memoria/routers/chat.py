@@ -1,5 +1,5 @@
 import os
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
@@ -12,6 +12,7 @@ from routers.jugadores import jugadores
 from database import (
     crear_conversacion, existe_conversacion, guardar_mensaje,
     obtener_historial, listar_conversaciones, obtener_conversacion,
+    eliminar_conversacion,
 )
 
 load_dotenv()
@@ -198,6 +199,22 @@ def consultar_conversacion(conversacion_id: str):
         if conversacion is None:
             raise HTTPException(status_code=404, detail="La conversación no existe.")
         return conversacion
+    except HTTPException:
+        raise
+    except MySQLError as error:
+        raise HTTPException(status_code=500, detail=f"Error al acceder a MySQL: {str(error)}")
+
+
+@router.delete("/conversaciones/{conversacion_id}")
+def borrar_conversacion(conversacion_id: UUID):
+    """Elimina una conversación y sus mensajes asociados."""
+    try:
+        if not eliminar_conversacion(str(conversacion_id)):
+            raise HTTPException(status_code=404, detail="La conversación no existe.")
+        return {
+            "mensaje": "La conversación se eliminó correctamente.",
+            "conversacion_id": str(conversacion_id),
+        }
     except HTTPException:
         raise
     except MySQLError as error:

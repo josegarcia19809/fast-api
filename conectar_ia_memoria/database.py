@@ -152,3 +152,20 @@ def obtener_conversacion(conversacion_id: str):
         return conversacion
     finally:
         conexion.close()
+
+
+def eliminar_conversacion(conversacion_id: str) -> bool:
+    """Elimina una conversación; MySQL elimina sus mensajes mediante ON DELETE CASCADE."""
+    conexion = obtener_conexion()
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("DELETE FROM conversaciones WHERE id = %s", (conversacion_id,))
+        eliminada = cursor.rowcount > 0
+        if eliminada:
+            conexion.commit()
+        return eliminada
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexion.close()

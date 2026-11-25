@@ -101,6 +101,14 @@ def filtrar_jugadores_por_goles(goles: int) -> list:
     return [j for j in jugadores if j["goles"] > goles]
 
 
+def obtener_limite_historial() -> int:
+    """Lee el máximo de mensajes que se enviarán a Gemini."""
+    try:
+        return max(1, int(os.getenv("GEMINI_HISTORY_LIMIT", "10")))
+    except (TypeError, ValueError):
+        return 10
+
+
 @router.post("/chat")
 def consultar_gemini(pregunta: Pregunta):
     api_key = os.getenv("GEMINI_API_KEY")
@@ -120,9 +128,9 @@ def consultar_gemini(pregunta: Pregunta):
         else:
             crear_conversacion(conversacion_id, pregunta.mensaje)
 
-        # Se conserva el mensaje del usuario y se recupera todo el contexto.
+        # Se conserva el mensaje del usuario; solo se limita el contexto enviado a Gemini.
         guardar_mensaje(conversacion_id, "user", pregunta.mensaje)
-        historial = obtener_historial(conversacion_id)
+        historial = obtener_historial(conversacion_id, obtener_limite_historial())
         contenidos = [
             types.Content(role=mensaje["rol"], parts=[types.Part(text=mensaje["contenido"])])
             for mensaje in historial

@@ -90,13 +90,17 @@ def guardar_mensaje(conversacion_id: str, rol: str, contenido: str):
         conexion.close()
 
 
-def obtener_historial(conversacion_id: str) -> list:
+def obtener_historial(conversacion_id: str, limite: int = 10) -> list:
+    """Obtiene los mensajes recientes para el contexto de Gemini en orden cronológico."""
     conexion = obtener_conexion()
     try:
         cursor = conexion.cursor(dictionary=True)
         cursor.execute(
-            "SELECT rol, contenido FROM mensajes WHERE conversacion_id = %s ORDER BY id",
-            (conversacion_id,),
+            "SELECT rol, contenido FROM ("
+            "SELECT id, rol, contenido FROM mensajes "
+            "WHERE conversacion_id = %s ORDER BY id DESC LIMIT %s"
+            ") AS mensajes_recientes ORDER BY id",
+            (conversacion_id, limite),
         )
         return cursor.fetchall()
     finally:

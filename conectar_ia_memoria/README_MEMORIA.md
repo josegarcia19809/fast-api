@@ -4,7 +4,7 @@
 
 1. Crea la base de datos ejecutando `base_datos.sql` en MySQL (por ejemplo, desde MySQL Workbench o la consola).
 2. Copia `.env.example` a `.env`.
-3. Configura `GEMINI_API_KEY`, `GEMINI_MODEL` y las credenciales `MYSQL_*` en `.env`.
+3. Configura `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_HISTORY_LIMIT` y las credenciales `MYSQL_*` en `.env`.
 4. Instala las dependencias de `requirements.txt`.
 5. Inicia FastAPI como lo hacías habitualmente. Al arrancar, la aplicación crea automáticamente las tablas `conversaciones` y `mensajes` si no existen.
 
@@ -42,7 +42,7 @@ Envía el mismo endpoint incluyendo el identificador recibido:
 }
 ```
 
-Gemini recibe el historial completo de esa conversación en orden cronológico.
+Gemini recibe como máximo los últimos `GEMINI_HISTORY_LIMIT` mensajes en orden cronológico. El valor predeterminado es `10`. El historial completo permanece almacenado en MySQL.
 
 ### Listar conversaciones
 
@@ -55,6 +55,8 @@ Devuelve el identificador, título, fechas y cantidad de mensajes de cada conver
 `GET /api/conversaciones/{conversacion_id}`
 
 Devuelve los datos de la conversación y sus mensajes. Si el identificador no existe, responde con HTTP 404.
+
+Para cambiar el límite, define por ejemplo `GEMINI_HISTORY_LIMIT=20` en `.env` y reinicia FastAPI. La variable solo controla el contexto enviado a Gemini; no limita el historial que devuelve este endpoint.
 
 ## 3. Persistencia
 

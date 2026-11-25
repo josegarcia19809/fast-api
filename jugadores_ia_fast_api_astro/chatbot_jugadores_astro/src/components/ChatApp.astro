@@ -1,0 +1,50 @@
+---
+import '../styles/chat.css';
+---
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">⚽</div>
+      <div><strong>Fútbol IA</strong><small>Asistente inteligente</small></div>
+    </div>
+    <button class="new-chat" id="new-chat">＋ <span>Nuevo chat</span></button>
+    <div class="history-heading"><span>HISTORIAL</span><span id="history-count">0</span></div>
+    <div id="conversation-list" class="conversation-list"><p class="muted empty-history">Cargando conversaciones…</p></div>
+    <div class="sidebar-footer"><span class="status-dot"></span><span id="connection-status">Conectando con FastAPI…</span></div>
+  </aside>
+
+  <main class="main-panel">
+    <header class="topbar">
+      <button class="mobile-menu" id="mobile-menu" aria-label="Abrir historial">☰</button>
+      <div><strong>Asistente de fútbol</strong><small>Consulta jugadores, clubes y estadísticas</small></div>
+      <span class="api-pill"><i></i> Gemini conectado vía API</span>
+    </header>
+    <section class="chat-area" id="chat-area">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">⚽</div>
+        <p class="eyebrow">TU ASISTENTE DE FÚTBOL</p>
+        <h1>¿Qué quieres saber<br />sobre el fútbol?</h1>
+        <p class="welcome-copy">Pregunta sobre jugadores, clubes, nacionalidades, posiciones y valores de mercado.</p>
+        <div class="suggestions">
+          <button class="suggestion" data-prompt="¿Qué jugadores están registrados?">👥 <span>Lista de jugadores</span></button>
+          <button class="suggestion" data-prompt="¿Qué clubes están registrados?">🏟️ <span>Consultar clubes</span></button>
+          <button class="suggestion" data-prompt="¿Quién es el jugador más joven?">📊 <span>Estadísticas de jugadores</span></button>
+        </div>
+      </div>
+      <div id="messages" class="messages" aria-live="polite"></div>
+    </section>
+    <footer class="composer-wrap">
+      <form id="chat-form" class="composer">
+        <textarea id="message-input" rows="1" placeholder="Escribe tu pregunta sobre fútbol…" aria-label="Escribe tu pregunta" required></textarea>
+        <button type="submit" id="send-button" aria-label="Enviar mensaje">➤</button>
+      </form>
+      <p class="disclaimer">Las respuestas se generan con información consultada por el asistente en la base de datos.</p>
+    </footer>
+  </main>
+</div>
+<div id="toast" class="toast" role="status"></div>
+
+<script src="../scripts/chat.ts"></script>
+
+

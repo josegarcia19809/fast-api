@@ -15,7 +15,7 @@ def obtener_conexion():
         port=int(os.getenv("MYSQL_PORT", "3306")),
         user=os.getenv("MYSQL_USER", "root"),
         password=os.getenv("MYSQL_PASSWORD", ""),
-        database=os.getenv("MYSQL_DATABASE", "mundial_fifa_2026"),
+        database=os.getenv("MYSQL_DATABASE", "conectar_ia"),
         charset="utf8mb4",
         use_unicode=True,
     )

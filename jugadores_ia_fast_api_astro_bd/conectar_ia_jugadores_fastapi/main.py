@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 from routers import jugadores, clubes, chat
 from database import inicializar_base_datos
@@ -8,6 +10,9 @@ app = FastAPI(
     description="API de estadísticas de fútbol con asistente de IA y Tool Calling",
     version="1.1.0"
 )
+
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # Configuración de CORS
 app.add_middleware(

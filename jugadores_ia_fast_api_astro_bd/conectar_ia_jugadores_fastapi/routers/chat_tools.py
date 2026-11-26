@@ -4,10 +4,10 @@ from decimal import Decimal
 from database import consultar_todos, consultar_uno
 
 LIMITE_RESULTADOS = 100
-SELECT_JUGADORES = """SELECT j.id_jugador, j.nombre, j.apellido, j.edad,
-    j.nacionalidad, j.posicion, j.numero_camiseta, j.valor_mercado,
-    j.altura, j.peso, j.pie_dominante, j.imagen, j.id_club,
-    c.nombre AS club FROM jugadores j JOIN clubes c ON c.id_club = j.id_club"""
+# j.* permite devolver todos los atributos presentes en la tabla (incluido goles
+# cuando exista en la instalación) sin asumir una versión concreta del esquema.
+SELECT_JUGADORES = """SELECT j.*, c.nombre AS club
+    FROM jugadores j JOIN clubes c ON c.id_club = j.id_club"""
 SELECT_CLUBES = """SELECT id_club, nombre, pais, liga, estadio, anio_fundacion
     FROM clubes"""
 
@@ -307,6 +307,203 @@ def comparar_jugadores(jugador_1: str, jugador_2: str) -> list:
     return _jugadores(SELECT_JUGADORES + " WHERE CONCAT(j.nombre, ' ', j.apellido) LIKE %s OR CONCAT(j.nombre, ' ', j.apellido) LIKE %s ORDER BY j.apellido, j.nombre", (f"%{jugador_1}%", f"%{jugador_2}%"))
 
 
+def _jugadores_por_filtros(nombre: str = "", apellido: str = "", posicion: str = "") -> list:
+    """Aplica filtros opcionales con parámetros; los filtros se combinan con AND."""
+    condiciones, parametros = [], []
+    if nombre:
+        nombre = _texto(nombre, "nombre")
+        condiciones.append("j.nombre LIKE %s")
+        parametros.append(f"%{nombre}%")
+    if apellido:
+        apellido = _texto(apellido, "apellido")
+        condiciones.append("j.apellido LIKE %s")
+        parametros.append(f"%{apellido}%")
+    if posicion:
+        posicion = _texto(posicion, "posicion")
+        condiciones.append("j.posicion LIKE %s")
+        parametros.append(f"%{posicion}%")
+    if not condiciones:
+        raise ValueError("Indica al menos nombre, apellido o posicion.")
+    return _jugadores(
+        SELECT_JUGADORES + " WHERE " + " AND ".join(condiciones)
+        + " ORDER BY j.apellido, j.nombre",
+        tuple(parametros),
+    )
+
+
+def buscar_jugadores_por_campos(nombre: str = "", apellido: str = "", posicion: str = "") -> list:
+    """Busca por nombre, apellido o posición; permite combinar filtros."""
+    return _jugadores_por_filtros(nombre, apellido, posicion)
+
+
+def obtener_jugador_detallado(id_jugador: int) -> dict:
+    """Devuelve todos los campos del jugador y el nombre de su club por ID."""
+    id_jugador = _entero(id_jugador, "id_jugador", 1, 2147483647)
+    jugador = consultar_uno(SELECT_JUGADORES + " WHERE j.id_jugador = %s", (id_jugador,))
+    return _normalizar(jugador or {"encontrado": False, "id_jugador": id_jugador})
+
+
+def _condicion_posicion(tipo: str) -> str:
+    """Devuelve únicamente fragmentos SQL constantes para categorías conocidas."""
+    if tipo == "defensas":
+        return "(LOWER(j.posicion) LIKE '%defens%' OR UPPER(j.posicion) IN ('DF', 'DEF'))"
+    if tipo == "mediocampistas":
+        return "(LOWER(j.posicion) LIKE '%medio%' OR LOWER(j.posicion) LIKE '%centrocamp%' OR UPPER(j.posicion) IN ('MF', 'MED'))"
+    raise ValueError("Categoría de posición no válida.")
+
+
+def consultar_jugadores_por_categoria(tipo: str) -> list:
+    """Lista defensas o mediocampistas usando las etiquetas guardadas en MySQL."""
+    condicion = _condicion_posicion(tipo)
+    return _jugadores(SELECT_JUGADORES + " WHERE " + condicion + " ORDER BY j.apellido, j.nombre")
+
+
+def consultar_categoria_por_club(tipo: str, club: str) -> list:
+    """Filtra defensas o mediocampistas de un club por coincidencia parcial."""
+    condicion = _condicion_posicion(tipo)
+    club = _texto(club, "club")
+    return _jugadores(
+        SELECT_JUGADORES + " WHERE " + condicion + " AND c.nombre LIKE %s ORDER BY j.apellido, j.nombre",
+        (f"%{club}%",),
+    )
+
+
+def consultar_categoria_por_seleccion(tipo: str, seleccion: str) -> list:
+    """Filtra defensas o mediocampistas por nacionalidad (selección)."""
+    condicion = _condicion_posicion(tipo)
+    seleccion = _texto(seleccion, "seleccion")
+    return _jugadores(
+        SELECT_JUGADORES + " WHERE " + condicion + " AND j.nacionalidad LIKE %s ORDER BY j.apellido, j.nombre",
+        (f"%{seleccion}%",),
+    )
+
+
+def _goles_disponibles() -> bool:
+    """Comprueba el esquema en tiempo de ejecución antes de consultar goles."""
+    fila = consultar_uno("""SELECT COUNT(*) AS existe
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'jugadores'
+          AND COLUMN_NAME = 'goles'""")
+    return bool(fila and fila.get("existe"))
+
+
+def _sin_goles():
+    return {
+        "disponible": False,
+        "mensaje": "La tabla jugadores no contiene la columna goles; no se calcularon estadísticas de goles.",
+    }
+
+
+def _validar_filtro_posicion(posicion: str) -> str:
+    posicion = _texto(posicion, "posicion")
+    return f" AND j.posicion LIKE %s", f"%{posicion}%"
+
+
+def consultar_goles_por_jugador(limite: int = 100, posicion: str = "") -> dict:
+    """Lista goles registrados por jugador, ordenados de mayor a menor."""
+    limite = _entero(limite, "limite", 1, 100)
+    if not _goles_disponibles():
+        return _sin_goles()
+    condicion, parametros = "", []
+    if posicion:
+        filtro, patron = _validar_filtro_posicion(posicion)
+        condicion, parametros = filtro, [patron]
+    filas = consultar_todos(
+        SELECT_JUGADORES + " WHERE j.goles IS NOT NULL" + condicion
+        + " ORDER BY j.goles DESC, j.apellido, j.nombre LIMIT %s",
+        tuple(parametros + [limite]),
+    )
+    return {"disponible": True, "cantidad": len(filas), "jugadores": _normalizar(filas)}
+
+
+def consultar_maximo_goleador(posicion: str = "") -> dict:
+    """Devuelve el máximo y todos los jugadores empatados en ese valor."""
+    if not _goles_disponibles():
+        return _sin_goles()
+    condicion, parametros = "", []
+    if posicion:
+        filtro, patron = _validar_filtro_posicion(posicion)
+        condicion, parametros = filtro, [patron]
+    maximo = consultar_uno(
+        "SELECT MAX(j.goles) AS goles_maximos FROM jugadores j WHERE j.goles IS NOT NULL" + condicion,
+        tuple(parametros),
+    )
+    if not maximo or maximo.get("goles_maximos") is None:
+        return {"disponible": True, "goles_maximos": None, "jugadores": []}
+    filas = consultar_todos(
+        SELECT_JUGADORES + " WHERE j.goles = %s" + (" AND " + condicion.removeprefix(" AND ") if condicion else "")
+        + " ORDER BY j.apellido, j.nombre",
+        (maximo["goles_maximos"], *parametros),
+    )
+    return {"disponible": True, "goles_maximos": maximo["goles_maximos"], "jugadores": _normalizar(filas)}
+
+
+def consultar_promedio_goles(posicion: str = "") -> dict:
+    """Calcula promedio y total de goles únicamente sobre valores no nulos."""
+    if not _goles_disponibles():
+        return _sin_goles()
+    condicion, parametros = "", []
+    if posicion:
+        filtro, patron = _validar_filtro_posicion(posicion)
+        condicion, parametros = filtro, [patron]
+    fila = consultar_uno("""SELECT COUNT(j.goles) AS jugadores_con_goles,
+        SUM(j.goles) AS goles_totales, AVG(j.goles) AS promedio_goles
+        FROM jugadores j WHERE j.goles IS NOT NULL""" + condicion, tuple(parametros))
+    return {"disponible": True, **_normalizar(fila or {})}
+
+
+def consultar_goles_agrupados(agrupacion: str) -> dict:
+    """Agrupa goles por club o nacionalidad/selección."""
+    if agrupacion not in {"club", "seleccion"}:
+        raise ValueError("agrupacion debe ser 'club' o 'seleccion'.")
+    if not _goles_disponibles():
+        return _sin_goles()
+    if agrupacion == "club":
+        sql = """SELECT c.nombre AS grupo, COUNT(j.id_jugador) AS cantidad_jugadores,
+            COUNT(j.goles) AS jugadores_con_goles, SUM(j.goles) AS goles_totales,
+            AVG(j.goles) AS promedio_goles
+            FROM clubes c LEFT JOIN jugadores j ON j.id_club = c.id_club
+            GROUP BY c.id_club, c.nombre ORDER BY goles_totales DESC, c.nombre LIMIT %s"""
+    else:
+        sql = """SELECT j.nacionalidad AS grupo, COUNT(j.id_jugador) AS cantidad_jugadores,
+            COUNT(j.goles) AS jugadores_con_goles, SUM(j.goles) AS goles_totales,
+            AVG(j.goles) AS promedio_goles
+            FROM jugadores j WHERE j.nacionalidad IS NOT NULL AND j.nacionalidad <> ''
+            GROUP BY j.nacionalidad ORDER BY goles_totales DESC, j.nacionalidad LIMIT %s"""
+    filas = consultar_todos(sql, (LIMITE_RESULTADOS,))
+    return {"disponible": True, "agrupacion": agrupacion, "grupos": _normalizar(filas)}
+
+
+def comparar_goles_jugadores(nombres: list[str]) -> dict:
+    """Compara jugadores indicados por nombre completo o fragmento de nombre."""
+    if not isinstance(nombres, list) or not 2 <= len(nombres) <= 10:
+        raise ValueError("nombres debe contener entre 2 y 10 jugadores.")
+    nombres = [_texto(nombre, "nombre") for nombre in nombres]
+    if not _goles_disponibles():
+        return _sin_goles()
+    filtros = " OR ".join("CONCAT(j.nombre, ' ', j.apellido) LIKE %s" for _ in nombres)
+    filas = consultar_todos(
+        SELECT_JUGADORES + " WHERE (" + filtros + ") ORDER BY j.goles DESC, j.apellido, j.nombre LIMIT %s",
+        tuple(f"%{nombre}%" for nombre in nombres) + (LIMITE_RESULTADOS,),
+    )
+    return {"disponible": True, "cantidad": len(filas), "jugadores": _normalizar(filas)}
+
+
+def consultar_estadisticas_por_posicion() -> dict:
+    """Resume cantidad y edad por posición; suma goles solo si esa columna existe."""
+    incluir_goles = _goles_disponibles()
+    columnas_goles = ", SUM(j.goles) AS goles_totales, AVG(j.goles) AS promedio_goles" if incluir_goles else ""
+    filas = consultar_todos("""SELECT j.posicion, COUNT(*) AS cantidad_jugadores,
+        AVG(j.edad) AS edad_promedio""" + columnas_goles + """
+        FROM jugadores j WHERE j.posicion IS NOT NULL AND j.posicion <> ''
+        GROUP BY j.posicion ORDER BY cantidad_jugadores DESC, j.posicion LIMIT %s""", (LIMITE_RESULTADOS,))
+    return {
+        "disponible": True,
+        "goles_disponibles": incluir_goles,
+        "estadisticas": _normalizar(filas),
+    }
+
+
 def consultar_jugadores_por_pais_club(pais: str) -> list:
     """Lista jugadores de clubes ubicados en el país indicado."""
     pais = _texto(pais, "pais")
@@ -348,4 +545,10 @@ HERRAMIENTAS_GEMINI = [
     comparar_clubes, consultar_jugadores_por_antiguedad_club,
     obtener_imagen_jugador, consultar_estadisticas_jugadores,
     obtener_informacion_club, comparar_jugadores,
+    buscar_jugadores_por_campos, obtener_jugador_detallado,
+    consultar_jugadores_por_categoria, consultar_categoria_por_club,
+    consultar_categoria_por_seleccion, consultar_goles_por_jugador,
+    consultar_maximo_goleador, consultar_promedio_goles,
+    consultar_goles_agrupados, comparar_goles_jugadores,
+    consultar_estadisticas_por_posicion,
 ]

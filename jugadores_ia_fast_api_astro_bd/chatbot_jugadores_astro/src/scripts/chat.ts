@@ -1,4 +1,4 @@
-import { api } from '../lib/api';
+import { api, getPlayerImageUrl } from '../lib/api';
 import type { Conversacion, Mensaje } from '../lib/types';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
@@ -32,6 +32,8 @@ const list = document.querySelector<HTMLDivElement>('#conversation-list')!;
       imagen.alt = imagen.alt.trim() || 'Fotografía del jugador';
       imagen.loading = 'lazy';
       imagen.decoding = 'async';
+      const imagenUrl = getPlayerImageUrl(imagen.getAttribute('src'));
+      if (imagenUrl) imagen.src = imagenUrl;
       imagen.addEventListener('error', () => {
         if (imagen.dataset.fallbackApplied === 'true') return;
         imagen.dataset.fallbackApplied = 'true';

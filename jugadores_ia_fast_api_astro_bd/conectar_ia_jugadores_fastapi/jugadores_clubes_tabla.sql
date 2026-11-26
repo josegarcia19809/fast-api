@@ -1,6 +1,9 @@
--- Base de datos para jugadores y clubes
-CREATE DATABASE IF NOT EXISTS mundial_fifa_2026 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE mundial_fifa_2026;
+-- Esquema inicial para la base de datos conectar_ia
+CREATE DATABASE IF NOT EXISTS conectar_ia
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+
+USE conectar_ia;
 
 CREATE TABLE IF NOT EXISTS clubes (
     id_club INT AUTO_INCREMENT PRIMARY KEY,
@@ -25,7 +28,10 @@ CREATE TABLE IF NOT EXISTS jugadores (
     peso DECIMAL(5,2),
     pie_dominante VARCHAR(15),
     imagen VARCHAR(500),
+    goles INT NOT NULL DEFAULT 0,
     id_club INT NOT NULL,
-    CONSTRAINT fk_jugadores_clubes FOREIGN KEY (id_club) REFERENCES clubes(id_club)
-        ON UPDATE CASCADE ON DELETE RESTRICT
+    CONSTRAINT fk_jugadores_clubes
+        FOREIGN KEY (id_club) REFERENCES clubes(id_club)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

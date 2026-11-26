@@ -5,9 +5,10 @@ interface Props {
   class?: string;
 }
 
+import { getPlayerImageUrl } from '../lib/api';
+
 const { nombre = 'Jugador', imagen, class: className = '' } = Astro.props;
-const url = imagen?.trim();
-const esUrlValida = !!url && /^https?:\/\//i.test(url);
+const url = getPlayerImageUrl(imagen);
 const iniciales = nombre
   .trim()
   .split(/\s+/)
@@ -19,7 +20,7 @@ const iniciales = nombre
 <figure class={`player-image ${className}`}>
   <img
     class="player-photo"
-    src={esUrlValida ? url : '/images/player-placeholder.svg'}
+    src={url || '/images/player-placeholder.svg'}
     alt={`Fotografía de ${nombre}`}
     loading="lazy"
     decoding="async"

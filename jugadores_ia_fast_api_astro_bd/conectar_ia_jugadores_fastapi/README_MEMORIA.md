@@ -132,6 +132,14 @@ Las consultas disponibles en el chat también se exponen como endpoints GET bajo
 
 La documentación interactiva de todas las rutas está disponible en `/docs` al iniciar FastAPI. Las rutas previas `/jugadores/posicion/{posicion}`, `/jugadores/cantidad/{posicion}` y `/jugadores/numero/{numero}` siguen disponibles por compatibilidad.
 
+### Administración CRUD
+
+- `GET /clubes/administracion` lista los campos de clubes para administración; `POST /clubes/` crea, `PUT /clubes/{id_club}` actualiza y `DELETE /clubes/{id_club}` elimina. Una FK impide eliminar clubes con jugadores asociados y se responde HTTP 409.
+- `GET /jugadores/administracion` entrega `items`, `total`, `limite` y `desplazamiento`. Acepta filtros combinables `nombre`, `posicion`, `nacionalidad` e `id_club`; el límite es 1–250.
+- `POST /jugadores/`, `PUT /jugadores/{id_jugador}` y `DELETE /jugadores/{id_jugador}` administran jugadores y validan el club relacionado.
+
+Las escrituras usan parámetros SQL y columnas existentes. No requieren cambios al esquema de MySQL.
+
 ## 7. Consultas nuevas de posiciones y goles
 
 Las rutas agregadas se documentan también en Swagger con parámetros, descripciones y ejemplos. Las respuestas de jugadores contienen `j.*` más `club`, por lo que reflejan las columnas que realmente tiene `jugadores` en la base conectada.

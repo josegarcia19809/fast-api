@@ -1,0 +1,14 @@
+---
+import AdminShell from '../../../components/AdminShell.astro';
+import PlayerForm from '../../../components/forms/PlayerForm.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+const { id } = Astro.params;
+if (!id || !/^[1-9]\d*$/.test(id)) return Astro.redirect('/jugadores');
+---
+<BaseLayout title="Editar jugador | Fútbol IA">
+  <AdminShell title="Editar jugador" active="jugadores" page="player-form">
+    <div class="admin-toolbar"><p>Actualiza los datos y el club al que pertenece.</p></div>
+    <PlayerForm recordId={id} />
+  </AdminShell>
+</BaseLayout>

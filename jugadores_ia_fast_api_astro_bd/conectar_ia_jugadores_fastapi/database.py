@@ -49,6 +49,25 @@ def consultar_uno(sql: str, parametros: tuple = ()):
         conexion.close()
 
 
+def ejecutar_modificacion(sql: str, parametros: tuple = ()) -> dict:
+    """Ejecuta INSERT/UPDATE/DELETE parametrizado y devuelve sus metadatos."""
+    conexion = obtener_conexion()
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute(sql, parametros)
+        resultado = {"filas": cursor.rowcount, "id": cursor.lastrowid}
+        conexion.commit()
+        return resultado
+    except Exception:
+        conexion.rollback()
+        raise
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexion.close()
+
+
 def inicializar_base_datos():
     """Crea las tablas necesarias si todavía no existen."""
     conexion = obtener_conexion()

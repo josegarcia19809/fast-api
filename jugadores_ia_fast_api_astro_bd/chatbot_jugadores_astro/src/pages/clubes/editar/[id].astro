@@ -1,0 +1,14 @@
+---
+import AdminShell from '../../../components/AdminShell.astro';
+import ClubForm from '../../../components/forms/ClubForm.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+const { id } = Astro.params;
+if (!id || !/^[1-9]\d*$/.test(id)) return Astro.redirect('/clubes');
+---
+<BaseLayout title="Editar club | Fútbol IA">
+  <AdminShell title="Editar club" active="clubes" page="club-form">
+    <div class="admin-toolbar"><p>Actualiza la información del club seleccionado.</p></div>
+    <ClubForm recordId={id} />
+  </AdminShell>
+</BaseLayout>

@@ -1,0 +1,19 @@
+---
+const { recordId = '' } = Astro.props;
+const editing = Boolean(recordId);
+---
+<section class="panel form-panel">
+  <p id="club-form-loading" class="loading" aria-live="polite" hidden>Cargando los datos del club…</p>
+  <p id="club-form-status" class="status-line" role="status" aria-live="polite"></p>
+  <form id="club-form" class="admin-form" data-record-id={recordId} hidden={editing}>
+    <div class="field"><label for="club-nombre">Nombre *</label><input id="club-nombre" name="nombre" maxlength="100" required /></div>
+    <div class="field"><label for="club-pais">País *</label><input id="club-pais" name="pais" maxlength="60" required /></div>
+    <div class="field"><label for="club-liga">Liga *</label><input id="club-liga" name="liga" maxlength="80" required /></div>
+    <div class="field"><label for="club-estadio">Estadio</label><input id="club-estadio" name="estadio" maxlength="100" /></div>
+    <div class="field"><label for="club-fundacion">Año de fundación</label><input id="club-fundacion" name="anio_fundacion" type="number" min="1800" max="2100" /></div>
+    <div class="form-actions">
+      <a class="secondary-button" href="/clubes">Cancelar</a>
+      <button id="club-submit" class="primary-button" type="submit">{editing ? 'Guardar cambios' : 'Registrar club'}</button>
+    </div>
+  </form>
+</section>

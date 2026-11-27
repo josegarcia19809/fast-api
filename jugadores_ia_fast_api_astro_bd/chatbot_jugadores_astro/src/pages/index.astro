@@ -1,7 +1,50 @@
 ---
+import AdminShell from '../components/AdminShell.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ChatApp from '../components/ChatApp.astro';
 ---
-<BaseLayout title="Asistente de fútbol | Chatbot">
-  <ChatApp />
+<BaseLayout title="Dashboard | Fútbol IA">
+  <AdminShell title="Dashboard" active="dashboard">
+    <figure class="home-hero">
+      <img src="/images/fifa2026.png" alt="Ilustración de futbolistas en una composición deportiva" fetchpriority="high" />
+    </figure>
+    <section class="welcome-panel"><div><h2>Bienvenido al centro de gestión</h2><p>Administra clubes y jugadores, revisa estadísticas y consulta el asistente. Los indicadores se actualizan desde la API conectada.</p></div><span class="welcome-mark" aria-hidden="true">⚽</span></section>
+    <div id="admin-error" class="status-line" data-error-target></div>
+    <section class="stats-grid" id="dashboard-cards" aria-live="polite">
+      <article class="stat-card"><small>Clubes registrados</small><strong>—</strong><span>Cargando datos…</span></article>
+      <article class="stat-card"><small>Jugadores registrados</small><strong>—</strong><span>Cargando datos…</span></article>
+      <article class="stat-card"><small>Edad promedio</small><strong>—</strong><span>Cargando datos…</span></article>
+      <article class="stat-card"><small>Valor promedio</small><strong>—</strong><span>Cargando datos…</span></article>
+    </section>
+    <div class="dashboard-grid">
+      <section class="panel"><h2>Accesos directos</h2><div class="shortcut-grid">
+        <a class="shortcut" href="/clubes"><strong>🏟️ Gestionar clubes</strong><span>Consultar, crear, editar y eliminar</span></a>
+        <a class="shortcut" href="/jugadores"><strong>👥 Gestionar jugadores</strong><span>Buscar, filtrar y administrar plantillas</span></a>
+        <a class="shortcut" href="/estadisticas"><strong>▤ Ver estadísticas</strong><span>Explorar agregados reales de la API</span></a>
+        <a class="shortcut" href="/chat"><strong>✦ Abrir asistente IA</strong><span>Conservar el chatbot y su historial</span></a>
+      </div></section>
+      <section class="panel"><h2>Club con más jugadores</h2><p id="top-club" class="loading">Cargando estadísticas…</p><div class="bar-list" id="dashboard-clubs"></div></section>
+      <section class="panel"><h2>Jugadores por posición</h2><div class="bar-list" id="dashboard-positions"><p class="loading">Cargando estadísticas…</p></div></section>
+    </div>
+  </AdminShell>
 </BaseLayout>
+
+<style>
+  .home-hero {
+    width: 100%;
+    margin: 0 0 16px;
+    aspect-ratio: 3.06 / 1;
+    max-height: 320px;
+    overflow: hidden;
+    border-radius: 18px;
+    background: #18243b;
+    box-shadow: 0 12px 35px #1e47751c;
+  }
+
+  .home-hero img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+</style>

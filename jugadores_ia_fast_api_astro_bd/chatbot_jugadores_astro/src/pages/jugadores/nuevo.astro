@@ -1,0 +1,11 @@
+---
+import AdminShell from '../../components/AdminShell.astro';
+import PlayerForm from '../../components/forms/PlayerForm.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Agregar jugador | Fútbol IA">
+  <AdminShell title="Agregar jugador" active="jugadores" page="player-form">
+    <div class="admin-toolbar"><p>Registra los datos del jugador y asígnalo a un club.</p></div>
+    <PlayerForm />
+  </AdminShell>
+</BaseLayout>

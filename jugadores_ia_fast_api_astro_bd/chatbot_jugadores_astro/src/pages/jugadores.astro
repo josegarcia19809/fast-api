@@ -1,0 +1,20 @@
+---
+import AdminShell from '../components/AdminShell.astro';
+import RecordDialog from '../components/RecordDialog.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Jugadores | Fútbol IA">
+  <AdminShell title="Jugadores" active="jugadores">
+    <div class="admin-toolbar"><p>Busca, filtra y administra los jugadores registrados.</p><a class="primary-button" href="/jugadores/nuevo">＋ Agregar jugador</a></div>
+    <div id="admin-error" class="status-line" data-error-target></div>
+    <form id="player-filters" class="filter-bar">
+      <input name="nombre" placeholder="Nombre o apellido" aria-label="Nombre o apellido" />
+      <input name="posicion" placeholder="Posición" aria-label="Posición" />
+      <input name="nacionalidad" placeholder="Nacionalidad" aria-label="Nacionalidad" />
+      <select id="filter-club" name="id_club" aria-label="Filtrar por club"><option value="">Todos los clubes</option></select>
+      <button class="primary-button" type="submit">Filtrar</button><button class="secondary-button" id="clear-filters" type="button">Limpiar</button>
+    </form>
+    <div class="table-wrap"><table class="admin-table"><thead><tr><th>Jugador</th><th>Posición</th><th>Nacionalidad</th><th>Club</th><th>Edad</th><th>Valor</th><th>Acciones</th></tr></thead><tbody id="players-body"><tr><td class="loading" colspan="7">Cargando jugadores…</td></tr></tbody></table><div id="player-pagination" class="pagination"></div></div>
+    <RecordDialog />
+  </AdminShell>
+</BaseLayout>

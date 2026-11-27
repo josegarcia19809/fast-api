@@ -1,0 +1,143 @@
+# Complementar el frontend Astro para administrar clubes y jugadores
+
+## Objetivo
+
+Trabaja sobre los proyectos FastAPI y Astro que ya existen en este workspace. Analiza primero su estado real y después completa la aplicación Astro con un dashboard, administración de clubes y jugadores, filtros y estadísticas basadas en MySQL.
+
+**No reconstruyas ninguno de los proyectos, no reemplaces el chatbot existente y no elimines funcionalidades.** Conserva la arquitectura, estilos y dependencias actuales siempre que sea razonable. Implementa únicamente lo que falte.
+
+## Contexto observado en esta versión del proyecto
+
+Usa estos datos como orientación y vuelve a verificarlos en el código antes de cambiarlo:
+
+- Backend: `conectar_ia_jugadores_fastapi/`, con `main.py`, `database.py` y routers `routers/jugadores.py`, `routers/clubes.py` y `routers/chat.py`.
+- FastAPI registra los routers de jugadores y clubes sin un prefijo adicional: las rutas empiezan por `/jugadores` y `/clubes`.
+- Los routers de clubes y jugadores disponibles actualmente son principalmente de **consulta GET**. No asumas que existen operaciones POST, PUT o DELETE para esos registros.
+- Astro: `chatbot_jugadores_astro/`. La página de inicio monta el componente `ChatApp.astro`; la lógica del chatbot está en `src/scripts/chat.ts` y sus estilos en `src/styles/chat.css`. Conserva esta experiencia y su integración con el chat.
+- El cliente Astro toma la URL de FastAPI de `PUBLIC_API_URL` y actualmente usa `http://127.0.0.1:8000` como fallback. FastAPI permite CORS para `http://localhost:4321` y `http://127.0.0.1:4321`; comprueba la configuración antes de modificarla.
+- La base actual trabaja con tablas MySQL `jugadores` y `clubes`. Consulta los SQL y las consultas de `chat_tools.py` para confirmar columnas y relaciones. No inventes campos.
+- El frontend no declara actualmente una biblioteca de gráficas como Chart.js. Verifica dependencias antes de elegir una; evita agregar una si una visualización ligera con la tecnología ya disponible resuelve el caso.
+
+## Etapa 1: diagnóstico antes de editar
+
+Inspecciona ambos proyectos, sus instrucciones locales y el estado de Git. Revisa:
+
+1. Rutas FastAPI, métodos, parámetros, validación, respuestas y errores.
+2. Tablas y relaciones reales de MySQL, incluidos nombres y tipos de columnas.
+3. Página, componentes, estilos, navegación, scripts y servicios existentes en Astro.
+4. Llamadas HTTP actuales, variable de entorno de la API, CORS y dependencias.
+5. Qué partes de la gestión y las estadísticas ya existen, cuáles son parciales y cuáles faltan.
+
+Entrega primero en el mensaje de progreso un diagnóstico breve, una tabla de rutas confirmadas y un plan concreto de archivos a modificar o crear. **Después continúa con la implementación en la misma tarea; no te detengas esperando confirmación.** No alteres cambios locales que ya existían y no reviertas archivos ajenos a esta tarea.
+
+### Rutas de consulta que existen en la versión observada
+
+Confirma sus respuestas en el código/Swagger antes de conectarlas; esta lista no autoriza a inventar contratos:
+
+- Clubes: `GET /clubes/`, `GET /clubes/buscar?nombre=...`, `GET /clubes/por-pais/{pais}`, `GET /clubes/por-liga/{liga}`, `GET /clubes/estadisticas`, `GET /clubes/cantidad-de-jugadores`, `GET /clubes/valor-mercado/por-liga`, `GET /clubes/valor-mercado/ranking`, `GET /clubes/comparar?club_1=...&club_2=...`, `GET /clubes/nombre/{nombre}`, `GET /clubes/{id_club}` y `GET /clubes/{id_club}/jugadores?posicion=...`.
+- Jugadores: `GET /jugadores/`, `GET /jugadores/buscar?nombre=...&apellido=...&posicion=...`, `GET /jugadores/detalle/{id_jugador}`, `GET /jugadores/por-nacionalidad/{nacionalidad}`, `GET /jugadores/nacionalidades`, `GET /jugadores/por-posicion/{posicion}`, `GET /jugadores/por-pie/{pie}`, `GET /jugadores/cantidad-por-posicion`, `GET /jugadores/promedio-edad-por-posicion`, `GET /jugadores/estadisticas`, `GET /jugadores/estadisticas/por-posicion`, `GET /jugadores/por-club/{club}` y otros endpoints de consulta definidos en el router.
+- Estadísticas de clubes como promedio de edad, cantidad de jugadores y valor acumulado podrían estar disponibles en `GET /clubes/estadisticas`; verifica la forma exacta de cada respuesta.
+- El detalle de jugador y sus datos de club pueden venir de `GET /jugadores/detalle/{id_jugador}`. Verifica cómo se sirve el campo `imagen` antes de construir URLs.
+
+## Etapa 2: funcionalidades del frontend
+
+### Dashboard
+
+Agrega una vista inicial que presente el sistema, indicadores con datos reales y accesos a los módulos. Obtén totales mediante endpoints existentes o, si no existen, calcula los indicadores a partir de respuestas completas reales de la API, teniendo en cuenta paginación si la hubiera. No muestres cifras de ejemplo como si fueran datos del sistema.
+
+### Clubes
+
+- Lista clubes y muestra solo los campos confirmados por la API, como nombre, país, liga y estadio si están presentes.
+- Incluye búsqueda/filtros apoyados por endpoints existentes.
+- Muestra la cantidad de jugadores y permite abrir/listar los jugadores de cada club cuando los endpoints actuales lo permitan.
+- Añade formularios de alta, edición y eliminación únicamente si existen endpoints de escritura confirmados o si implementas los endpoints faltantes en FastAPI conforme a la política de esta especificación.
+
+### Jugadores
+
+- Lista, busca y filtra jugadores por nombre/apellido, posición, nacionalidad y club usando los endpoints disponibles.
+- Muestra los campos confirmados por el backend, el club relacionado y la imagen cuando haya una URL o ruta válida.
+- Para elegir un club en formularios, carga las opciones desde FastAPI; no uses opciones codificadas en el frontend.
+- No supongas que todos los registros tienen imagen ni completes atributos ausentes.
+
+### Estadísticas
+
+Incluye las métricas solicitadas cuando puedan derivarse con datos reales:
+
+1. Jugadores por club.
+2. Jugadores por posición.
+3. Promedio de edad por club.
+4. Club con más jugadores.
+5. Valor de mercado acumulado por club.
+6. Jugadores por nacionalidad.
+7. Jugadores por pie dominante.
+
+Prioriza endpoints existentes y documenta qué endpoint alimenta cada gráfico o indicador. Si se necesita agregar una estadística, verifica primero si puede calcularse a partir de datos reales ya disponibles. No calcules promedios o sumas sobre resultados parciales o limitados.
+
+## Política para operaciones CRUD y cambios en FastAPI
+
+La versión observada de `routers/clubes.py` y `routers/jugadores.py` ofrece consultas GET, pero no rutas de escritura CRUD. Por tanto:
+
+1. No simules altas, cambios o eliminaciones en el navegador ni afirmes que se guardaron si FastAPI no persistió el cambio.
+2. Si CRUD completo es necesario para cumplir la interfaz, agrega endpoints POST/PUT/DELETE mínimos en los routers existentes, reutilizando la conexión y las funciones de `database.py`.
+3. Antes de implementarlos, explica en el diagnóstico qué operaciones faltan y qué rutas/métodos agregarás; continúa luego sin esperar respuesta.
+4. Valida cuerpos y parámetros con modelos Pydantic y devuelve códigos HTTP apropiados (por ejemplo, 201 al crear, 404 si el registro no existe y 422 ante datos inválidos).
+5. Usa consultas parametrizadas. No construyas SQL con valores recibidos del cliente.
+6. Respeta las columnas y claves reales de `jugadores` y `clubes`. No agregues ni modifiques tablas/columnas ni cambies el esquema MySQL.
+7. Comprueba reglas de integridad existentes, como la relación del jugador con un club, antes de insertar o actualizar.
+8. Si no se pueden implementar operaciones de escritura de forma segura con el esquema disponible, deja esa limitación claramente indicada y termina las pantallas de consulta sin fingir persistencia.
+
+## Integración, interfaz y errores
+
+- Reutiliza el cliente/servicio HTTP existente. Centraliza ahí las solicitudes; no disperses `fetch()` duplicados por componentes.
+- Conserva `PUBLIC_API_URL` como configuración y confirma CORS para el origen real de Astro.
+- Respeta los métodos, nombres de parámetros y estructuras JSON que realmente devuelve FastAPI.
+- Tras una operación de escritura correcta, vuelve a consultar los datos afectados desde FastAPI.
+- Implementa estados de carga, estados vacíos, mensajes de éxito y errores útiles (incluida API no disponible).
+- Confirma eliminaciones antes de ejecutarlas y evita envíos duplicados mientras haya una solicitud pendiente.
+- Mantén navegación accesible, formularios con etiquetas, validación visible y diseño responsivo.
+- Conserva sin regresiones el chatbot actual, su historial, preferencias, imágenes y conexión con Tools.
+
+## Etapa 3: plan e implementación
+
+Después del diagnóstico, presenta un plan corto con los archivos concretos. Implementa sobre la estructura existente:
+
+- Reutiliza páginas, componentes, estilos y cliente API actuales.
+- Crea componentes o rutas Astro solo para módulos que falten.
+- Añade una biblioteca de gráficas únicamente si hace falta y es compatible con las dependencias instaladas; registra cualquier dependencia añadida.
+- No rehagas toda la interfaz, no dupliques lógica y no elimines capacidades actuales.
+- No modifiques el esquema de la base de datos.
+
+## Etapa 4: validación
+
+Ejecuta las verificaciones disponibles apropiadas para los proyectos (por ejemplo, comprobación/build de Astro y verificaciones relevantes del backend). No afirmes haber validado operaciones MySQL reales si no tienes conexión a una base configurada.
+
+Comprueba, según el entorno disponible:
+
+- La compilación de Astro y la ausencia de errores de tipos relevantes.
+- La conexión a FastAPI y el manejo de errores de conexión.
+- La consulta de clubes y jugadores, búsqueda/filtros y detalles.
+- La renderización de estadísticas con datos recibidos de la API.
+- La validación de formularios.
+- Cada operación CRUD implementada contra FastAPI/MySQL, sin usar datos ficticios.
+- La actualización de las vistas después de guardar o eliminar.
+- El layout en tamaños de pantalla distintos, si hay una forma disponible de inspeccionarlo.
+
+No cambies ni elimines pruebas existentes. Si alguna comprobación no puede ejecutarse, indica cuál y por qué.
+
+## Entregables finales
+
+Resume:
+
+1. Diagnóstico: capacidades previas, parciales y faltantes.
+2. Funcionalidades implementadas.
+3. Archivos modificados y creados.
+4. Endpoints reales utilizados por cada módulo, con sus métodos.
+5. Endpoints FastAPI nuevos, si agregaste alguno, y la razón.
+6. Comandos para iniciar FastAPI y Astro, y configuración de `PUBLIC_API_URL`.
+7. Verificaciones realizadas y su resultado.
+8. Limitaciones pendientes, especialmente cualquier CRUD que no pudiera guardarse realmente.
+
+## Instrucción final
+
+Evoluciona estos dos proyectos en el workspace. Analiza lo que ya existe, conserva todo lo que funciona y completa lo pendiente con cambios mínimos y verificables. No desarrolles una aplicación nueva ni inventes datos, endpoints, campos o resultados.
+

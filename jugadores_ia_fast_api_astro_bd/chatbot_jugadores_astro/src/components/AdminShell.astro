@@ -1,0 +1,31 @@
+---
+import '../styles/admin.css';
+const { title = 'Panel de administración', active = 'dashboard', page = active } = Astro.props;
+---
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <a class="admin-brand" href="/"><span class="admin-brand-mark">⚽</span><span><strong>Fútbol IA</strong><small>Panel de gestión</small></span></a>
+    <nav class="admin-nav" aria-label="Navegación principal">
+      <a class:list={{ active: active === 'dashboard' }} href="/">▦ <span>Dashboard</span></a>
+      <a class:list={{ active: active === 'clubes' }} href="/clubes">🏟️ <span>Clubes</span></a>
+      <a class:list={{ active: active === 'jugadores' }} href="/jugadores">👥 <span>Jugadores</span></a>
+      <a class:list={{ active: active === 'estadisticas' }} href="/estadisticas">▤ <span>Estadísticas</span></a>
+      <a href="/chat">✦ <span>Asistente IA</span></a>
+    </nav>
+    <div class="admin-side-note">Datos conectados a FastAPI y MySQL</div>
+  </aside>
+  <main class="admin-main">
+    <header class="admin-topbar"><div><span class="admin-kicker">GESTIÓN DE FÚTBOL</span><h1>{title}</h1></div><span class="backend-badge"><i></i> API FastAPI</span></header>
+    <div class="admin-content" data-admin-page={page}><slot /></div>
+  </main>
+</div>
+<div id="admin-toast" class="admin-toast" role="status" aria-live="polite"></div>
+<script>
+  import '../scripts/admin.ts';
+</script>
+
+<style is:global>
+  .admin-toolbar a,
+  .form-actions a,
+  .table-actions a { display: inline-flex; align-items: center; text-decoration: none; }
+</style>

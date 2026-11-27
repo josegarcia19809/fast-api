@@ -1,9 +1,29 @@
 from fastapi import APIRouter, HTTPException, Query
 from mysql.connector import Error as MySQLError
+from pydantic import BaseModel, Field, validator
 
+from database import consultar_todos, consultar_uno, ejecutar_modificacion
 from routers import chat_tools as consultas
 
 router = APIRouter(prefix="/clubes", tags=["clubes"])
+
+
+class ClubEntrada(BaseModel):
+    nombre: str = Field(..., min_length=1, max_length=100)
+    pais: str = Field(..., min_length=1, max_length=60)
+    liga: str = Field(..., min_length=1, max_length=80)
+    estadio: str | None = Field(None, max_length=100)
+    anio_fundacion: int | None = Field(None, ge=1800, le=2100)
+
+    @validator("nombre", "pais", "liga")
+    def texto_requerido(cls, valor):
+        valor = valor.strip()
+        if not valor:
+            raise ValueError("Este campo no puede quedar vacío.")
+        return valor
+
+    class Config:
+        extra = "forbid"
 
 
 def _ejecutar(funcion, *args):
@@ -18,6 +38,28 @@ def _ejecutar(funcion, *args):
 @router.get("/")
 def obtener_clubes():
     return _ejecutar(consultas.consultar_clubes)
+
+
+@router.get("/administracion")
+def listar_clubes_administracion():
+    try:
+        return consultar_todos("SELECT id_club, nombre, pais, liga, estadio, anio_fundacion FROM clubes ORDER BY nombre")
+    except MySQLError as error:
+        raise HTTPException(status_code=500, detail="Error al consultar los clubes.") from error
+
+
+@router.post("/", status_code=201)
+def crear_club(club: ClubEntrada):
+    try:
+        resultado = ejecutar_modificacion(
+            "INSERT INTO clubes (nombre, pais, liga, estadio, anio_fundacion) VALUES (%s, %s, %s, %s, %s)",
+            (club.nombre.strip(), club.pais.strip(), club.liga.strip(), club.estadio.strip() if club.estadio else None, club.anio_fundacion),
+        )
+        return obtener_club(resultado["id"])
+    except MySQLError as error:
+        if getattr(error, "errno", None) == 1062:
+            raise HTTPException(status_code=409, detail="Ya existe un club con ese nombre.") from error
+        raise HTTPException(status_code=500, detail="No fue posible guardar el club.") from error
 
 
 @router.get("/buscar")
@@ -68,8 +110,6 @@ def informacion_club(nombre: str):
 
 @router.get("/{id_club}/jugadores")
 def obtener_jugadores_del_club(id_club: int, posicion: str | None = None):
-    from database import consultar_uno
-
     try:
         club = consultar_uno("SELECT id_club, nombre FROM clubes WHERE id_club = %s", (id_club,))
     except MySQLError as error:
@@ -82,8 +122,6 @@ def obtener_jugadores_del_club(id_club: int, posicion: str | None = None):
 @router.get("/{id_club}")
 def obtener_club(id_club: int):
     # Conserva la ruta existente basada en ID; el chat busca por nombre.
-    from database import consultar_uno
-
     try:
         club = consultar_uno("SELECT id_club, nombre, pais, liga, estadio, anio_fundacion FROM clubes WHERE id_club = %s", (id_club,))
     except MySQLError as error:
@@ -91,3 +129,37 @@ def obtener_club(id_club: int):
     if club is None:
         raise HTTPException(status_code=404, detail="Club no encontrado")
     return club
+
+
+@router.put("/{id_club}")
+def actualizar_club(id_club: int, club: ClubEntrada):
+    try:
+        existente = consultar_uno("SELECT id_club FROM clubes WHERE id_club = %s", (id_club,))
+        if existente is None:
+            raise HTTPException(status_code=404, detail="Club no encontrado")
+        ejecutar_modificacion(
+            "UPDATE clubes SET nombre = %s, pais = %s, liga = %s, estadio = %s, anio_fundacion = %s WHERE id_club = %s",
+            (club.nombre.strip(), club.pais.strip(), club.liga.strip(), club.estadio.strip() if club.estadio else None, club.anio_fundacion, id_club),
+        )
+        return obtener_club(id_club)
+    except HTTPException:
+        raise
+    except MySQLError as error:
+        if getattr(error, "errno", None) == 1062:
+            raise HTTPException(status_code=409, detail="Ya existe otro club con ese nombre.") from error
+        raise HTTPException(status_code=500, detail="No fue posible actualizar el club.") from error
+
+
+@router.delete("/{id_club}", status_code=204)
+def eliminar_club(id_club: int):
+    try:
+        resultado = ejecutar_modificacion("DELETE FROM clubes WHERE id_club = %s", (id_club,))
+        if resultado["filas"] == 0:
+            raise HTTPException(status_code=404, detail="Club no encontrado")
+        return None
+    except HTTPException:
+        raise
+    except MySQLError as error:
+        if getattr(error, "errno", None) == 1451:
+            raise HTTPException(status_code=409, detail="No se puede eliminar el club porque tiene jugadores asociados.") from error
+        raise HTTPException(status_code=500, detail="No fue posible eliminar el club.") from error

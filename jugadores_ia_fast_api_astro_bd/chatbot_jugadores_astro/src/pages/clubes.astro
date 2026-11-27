@@ -1,0 +1,13 @@
+---
+import AdminShell from '../components/AdminShell.astro';
+import RecordDialog from '../components/RecordDialog.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Clubes | Fútbol IA">
+  <AdminShell title="Clubes" active="clubes">
+    <div class="admin-toolbar"><p>Consulta los clubes y sus plantillas.</p><a class="primary-button" href="/clubes/nuevo">＋ Agregar club</a></div>
+    <div id="admin-error" class="status-line" data-error-target></div>
+    <div class="table-wrap"><table class="admin-table"><thead><tr><th>Nombre</th><th>País</th><th>Liga</th><th>Estadio</th><th>Fundación</th><th>Jugadores</th><th>Acciones</th></tr></thead><tbody id="clubs-body"><tr><td class="loading" colspan="7">Cargando clubes…</td></tr></tbody></table></div>
+    <RecordDialog />
+  </AdminShell>
+</BaseLayout>

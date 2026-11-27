@@ -1,9 +1,59 @@
 from fastapi import APIRouter, HTTPException, Path, Query
 from mysql.connector import Error as MySQLError
+from pydantic import BaseModel, Field, validator
 
+from database import consultar_todos, consultar_uno, ejecutar_modificacion
 from routers import chat_tools as consultas
 
 router = APIRouter(prefix="/jugadores", tags=["jugadores"])
+
+
+class JugadorEntrada(BaseModel):
+    nombre: str = Field(..., min_length=1, max_length=60)
+    apellido: str = Field(..., min_length=1, max_length=60)
+    edad: int | None = Field(None, ge=0, le=120)
+    nacionalidad: str | None = Field(None, max_length=60)
+    posicion: str | None = Field(None, max_length=30)
+    numero_camiseta: int | None = Field(None, ge=0, le=999)
+    valor_mercado: float | None = Field(None, ge=0, le=9_999_999_999.99)
+    altura: float | None = Field(None, gt=0, le=3)
+    peso: float | None = Field(None, gt=0, le=500)
+    pie_dominante: str | None = Field(None, max_length=15)
+    imagen: str | None = Field(None, max_length=500)
+    id_club: int = Field(..., gt=0)
+
+    @validator("nombre", "apellido")
+    def texto_requerido(cls, valor):
+        valor = valor.strip()
+        if not valor:
+            raise ValueError("Nombre y apellido no pueden quedar vacíos.")
+        return valor
+
+    class Config:
+        extra = "forbid"
+
+
+SELECT_ADMIN_JUGADORES = """SELECT j.id_jugador, j.nombre, j.apellido, j.edad,
+    j.nacionalidad, j.posicion, j.numero_camiseta, j.valor_mercado,
+    j.altura, j.peso, j.pie_dominante, j.imagen, j.id_club, c.nombre AS club
+    FROM jugadores j JOIN clubes c ON c.id_club = j.id_club"""
+
+
+def _obtener_jugador_admin(id_jugador: int):
+    jugador = consultar_uno(SELECT_ADMIN_JUGADORES + " WHERE j.id_jugador = %s", (id_jugador,))
+    if jugador is None:
+        raise HTTPException(status_code=404, detail="Jugador no encontrado.")
+    return jugador
+
+
+def _valores_jugador(jugador: JugadorEntrada):
+    valores = jugador.model_dump() if hasattr(jugador, "model_dump") else jugador.dict()
+    for campo in ("nombre", "apellido", "nacionalidad", "posicion", "pie_dominante", "imagen"):
+        if isinstance(valores[campo], str):
+            valores[campo] = valores[campo].strip() or None
+    valores["nombre"] = valores["nombre"] or ""
+    valores["apellido"] = valores["apellido"] or ""
+    return valores
 
 RESPUESTA_JUGADORES = {
     200: {
@@ -50,6 +100,95 @@ def _ejecutar(funcion, *args):
 def obtener_jugadores():
     """Lista los jugadores registrados con los datos disponibles y su club."""
     return _ejecutar(consultas.consultar_jugadores)
+
+
+@router.get("/administracion")
+def listar_jugadores_administracion(
+    nombre: str | None = Query(None, min_length=1, max_length=100),
+    posicion: str | None = Query(None, min_length=1, max_length=30),
+    nacionalidad: str | None = Query(None, min_length=1, max_length=60),
+    id_club: int | None = Query(None, gt=0),
+    limite: int = Query(100, ge=1, le=250),
+    desplazamiento: int = Query(0, ge=0),
+):
+    """Lista completa por páginas y aplica filtros combinables para administración."""
+    filtros, parametros = [], []
+    if nombre:
+        filtros.append("(j.nombre LIKE %s OR j.apellido LIKE %s OR CONCAT(j.nombre, ' ', j.apellido) LIKE %s)")
+        patron = f"%{nombre.strip()}%"
+        parametros.extend((patron, patron, patron))
+    for columna, valor in (("j.posicion", posicion), ("j.nacionalidad", nacionalidad)):
+        if valor:
+            filtros.append(f"{columna} LIKE %s")
+            parametros.append(f"%{valor.strip()}%")
+    if id_club:
+        filtros.append("j.id_club = %s")
+        parametros.append(id_club)
+    where = " WHERE " + " AND ".join(filtros) if filtros else ""
+    try:
+        total = consultar_uno("SELECT COUNT(*) AS total FROM jugadores j" + where, tuple(parametros))["total"]
+        filas = consultar_todos(
+            SELECT_ADMIN_JUGADORES + where + " ORDER BY j.apellido, j.nombre LIMIT %s OFFSET %s",
+            tuple(parametros) + (limite, desplazamiento),
+        )
+        return {"items": filas, "total": total, "limite": limite, "desplazamiento": desplazamiento}
+    except MySQLError as error:
+        raise HTTPException(status_code=500, detail="Error al consultar los jugadores.") from error
+
+
+@router.post("/", status_code=201)
+def crear_jugador(jugador: JugadorEntrada):
+    try:
+        valores = _valores_jugador(jugador)
+        club = consultar_uno("SELECT id_club FROM clubes WHERE id_club = %s", (valores["id_club"],))
+        if club is None:
+            raise HTTPException(status_code=422, detail="El club seleccionado no existe.")
+        columnas = ("nombre", "apellido", "edad", "nacionalidad", "posicion", "numero_camiseta", "valor_mercado", "altura", "peso", "pie_dominante", "imagen", "id_club")
+        sql = f"INSERT INTO jugadores ({', '.join(columnas)}) VALUES ({', '.join(['%s'] * len(columnas))})"
+        resultado = ejecutar_modificacion(sql, tuple(valores[columna] for columna in columnas))
+        return _obtener_jugador_admin(resultado["id"])
+    except HTTPException:
+        raise
+    except MySQLError as error:
+        if getattr(error, "errno", None) == 1452:
+            raise HTTPException(status_code=422, detail="El club seleccionado no existe.") from error
+        raise HTTPException(status_code=500, detail="No fue posible guardar el jugador.") from error
+
+
+@router.put("/{id_jugador}")
+def actualizar_jugador(id_jugador: int, jugador: JugadorEntrada):
+    try:
+        valores = _valores_jugador(jugador)
+        if consultar_uno("SELECT id_jugador FROM jugadores WHERE id_jugador = %s", (id_jugador,)) is None:
+            raise HTTPException(status_code=404, detail="Jugador no encontrado.")
+        if consultar_uno("SELECT id_club FROM clubes WHERE id_club = %s", (valores["id_club"],)) is None:
+            raise HTTPException(status_code=422, detail="El club seleccionado no existe.")
+        columnas = ("nombre", "apellido", "edad", "nacionalidad", "posicion", "numero_camiseta", "valor_mercado", "altura", "peso", "pie_dominante", "imagen", "id_club")
+        asignaciones = ", ".join(f"{columna} = %s" for columna in columnas)
+        ejecutar_modificacion(
+            f"UPDATE jugadores SET {asignaciones} WHERE id_jugador = %s",
+            tuple(valores[columna] for columna in columnas) + (id_jugador,),
+        )
+        return _obtener_jugador_admin(id_jugador)
+    except HTTPException:
+        raise
+    except MySQLError as error:
+        if getattr(error, "errno", None) == 1452:
+            raise HTTPException(status_code=422, detail="El club seleccionado no existe.") from error
+        raise HTTPException(status_code=500, detail="No fue posible actualizar el jugador.") from error
+
+
+@router.delete("/{id_jugador}", status_code=204)
+def eliminar_jugador(id_jugador: int):
+    try:
+        resultado = ejecutar_modificacion("DELETE FROM jugadores WHERE id_jugador = %s", (id_jugador,))
+        if resultado["filas"] == 0:
+            raise HTTPException(status_code=404, detail="Jugador no encontrado.")
+        return None
+    except HTTPException:
+        raise
+    except MySQLError as error:
+        raise HTTPException(status_code=500, detail="No fue posible eliminar el jugador.") from error
 
 
 @router.get("/buscar", summary="Buscar jugadores por nombre, apellido o posición", responses=RESPUESTA_JUGADORES)

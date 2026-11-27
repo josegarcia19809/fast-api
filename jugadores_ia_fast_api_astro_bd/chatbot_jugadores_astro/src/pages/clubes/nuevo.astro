@@ -1,0 +1,11 @@
+---
+import AdminShell from '../../components/AdminShell.astro';
+import ClubForm from '../../components/forms/ClubForm.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Agregar club | Fútbol IA">
+  <AdminShell title="Agregar club" active="clubes" page="club-form">
+    <div class="admin-toolbar"><p>Registra un club con sus datos oficiales.</p></div>
+    <ClubForm />
+  </AdminShell>
+</BaseLayout>

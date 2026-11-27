@@ -76,19 +76,37 @@ def inicializar_base_datos():
                     ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         """)
+        # Preferencias por conversación; migración compatible con la memoria existente.
+        cursor.execute("SHOW COLUMNS FROM conversaciones LIKE 'tono'")
+        if cursor.fetchone() is None:
+            cursor.execute("ALTER TABLE conversaciones ADD COLUMN tono VARCHAR(32) NOT NULL DEFAULT 'amigable'")
+        cursor.execute("UPDATE conversaciones SET tono = 'amigable' WHERE tono NOT IN ('amigable', 'furioso', 'triste', 'amargado')")
+        cursor.execute("SHOW COLUMNS FROM conversaciones LIKE 'usar_emojis'")
+        if cursor.fetchone() is None:
+            cursor.execute("ALTER TABLE conversaciones ADD COLUMN usar_emojis BOOLEAN NOT NULL DEFAULT FALSE")
         conexion.commit()
     finally:
         conexion.close()
 
 
-def crear_conversacion(conversacion_id: str, titulo: str):
+def crear_conversacion(conversacion_id: str, titulo: str, tono: str = "amigable", usar_emojis: bool = False):
     conexion = obtener_conexion()
     try:
         cursor = conexion.cursor()
         cursor.execute(
-            "INSERT INTO conversaciones (id, titulo) VALUES (%s, %s)",
-            (conversacion_id, titulo[:255] or "Nueva conversación"),
+            "INSERT INTO conversaciones (id, titulo, tono, usar_emojis) VALUES (%s, %s, %s, %s)",
+            (conversacion_id, titulo[:255] or "Nueva conversación", tono, usar_emojis),
         )
+        conexion.commit()
+    finally:
+        conexion.close()
+
+
+def actualizar_preferencias_conversacion(conversacion_id: str, tono: str, usar_emojis: bool):
+    conexion = obtener_conexion()
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("UPDATE conversaciones SET tono = %s, usar_emojis = %s WHERE id = %s", (tono, usar_emojis, conversacion_id))
         conexion.commit()
     finally:
         conexion.close()
@@ -143,7 +161,7 @@ def listar_conversaciones() -> list:
     try:
         cursor = conexion.cursor(dictionary=True)
         cursor.execute("""
-            SELECT c.id, c.titulo, c.creada_en, c.actualizada_en,
+            SELECT c.id, c.titulo, c.tono, c.usar_emojis, c.creada_en, c.actualizada_en,
                    COUNT(m.id) AS total_mensajes
             FROM conversaciones c
             LEFT JOIN mensajes m ON m.conversacion_id = c.id
@@ -164,7 +182,7 @@ def obtener_conversacion(conversacion_id: str):
     try:
         cursor = conexion.cursor(dictionary=True)
         cursor.execute(
-            "SELECT id, titulo, creada_en, actualizada_en FROM conversaciones WHERE id = %s",
+            "SELECT id, titulo, tono, usar_emojis, creada_en, actualizada_en FROM conversaciones WHERE id = %s",
             (conversacion_id,),
         )
         conversacion = cursor.fetchone()

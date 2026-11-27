@@ -21,6 +21,18 @@ import '../styles/chat.css';
       <span class="api-pill"><i></i> Gemini conectado vía API</span>
     </header>
     <section class="chat-area" id="chat-area">
+      <div class="preference-control" aria-label="Personalidad y preferencias del asistente">
+        <div class="tone-control">
+          <label for="tone-select">Personalidad</label>
+          <select id="tone-select" aria-describedby="tone-description"></select>
+          <span id="tone-description">Cercano, cordial y positivo.</span>
+        </div>
+        <label class="emoji-toggle" for="emoji-toggle">
+          <input id="emoji-toggle" type="checkbox" />
+          <span class="emoji-switch" aria-hidden="true"></span>
+          <span class="emoji-label"><strong>Usar emojis</strong><small id="emoji-state">Desactivados</small></span>
+        </label>
+      </div>
       <div class="welcome" id="welcome">
         <div class="welcome-icon">⚽</div>
         <p class="eyebrow">TU ASISTENTE DE FÚTBOL</p>

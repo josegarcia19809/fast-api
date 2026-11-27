@@ -35,7 +35,9 @@ El registro completo está en `routers/chat_tools.py` (`HERRAMIENTAS_GEMINI`). L
 
 ```json
 {
-  "mensaje": "¿Quién es el jugador con mayor valor de mercado?"
+  "mensaje": "¿Quién es el jugador con mayor valor de mercado?",
+  "tono": "amigable",
+  "usar_emojis": false
 }
 ```
 
@@ -44,9 +46,13 @@ La respuesta incluye el identificador que debes conservar para los siguientes me
 ```json
 {
   "respuesta": "...",
-  "conversacion_id": "uuid-de-la-conversacion"
+  "conversacion_id": "uuid-de-la-conversacion",
+  "tono": "amigable",
+  "usar_emojis": false
 }
 ```
+
+Los tonos permitidos son `amigable` (predeterminado), `furioso`, `triste` y `amargado`. `usar_emojis` es booleano, predeterminado `false`. `GET /api/tonos` devuelve el catálogo con nombres, descripciones y elementos visuales; un tono distinto produce HTTP 422. Para modificar preferencias sin enviar un mensaje, usa `PUT /api/conversaciones/{conversacion_id}/preferencias` con `{ "tono": "triste", "usar_emojis": true }`. Ambas preferencias se guardan y se devuelven al recuperar la conversación.
 
 ### Continuar una conversación existente
 
@@ -95,6 +101,7 @@ Puedes continuar una conversación enviando el `conversacion_id` devuelto. Por e
 ## 5. Persistencia
 
 - `conversaciones`: identifica cada sesión y guarda su título y fechas.
+- `conversaciones.tono` y `conversaciones.usar_emojis`: guardan las preferencias activas. Al iniciar FastAPI se agregan las columnas faltantes; conversaciones previas reciben `amigable` y `false`.
 - `mensajes`: almacena cada mensaje con su rol (`user` o `model`), contenido y fecha.
 - Las conversaciones se conservan al reiniciar FastAPI porque los datos residen en MySQL.
 

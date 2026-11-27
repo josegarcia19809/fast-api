@@ -13,7 +13,14 @@ const list = document.querySelector<HTMLDivElement>('#conversation-list')!;
   const toast = document.querySelector<HTMLDivElement>('#toast')!;
   const count = document.querySelector<HTMLSpanElement>('#history-count')!;
   const connection = document.querySelector<HTMLSpanElement>('#connection-status')!;
+  const toneSelect = document.querySelector<HTMLSelectElement>('#tone-select')!;
+  const toneDescription = document.querySelector<HTMLSpanElement>('#tone-description')!;
+  const emojiToggle = document.querySelector<HTMLInputElement>('#emoji-toggle')!;
+  const emojiState = document.querySelector<HTMLElement>('#emoji-state')!;
   let conversacionId: string | null = null;
+  let tonoActivo = 'amigable';
+  let usarEmojis = false;
+  const descripcionesTono = new Map<string, string>();
   let enviando = false;
   let conversaciones: Conversacion[] = [];
 
@@ -24,6 +31,55 @@ const list = document.querySelector<HTMLDivElement>('#conversation-list')!;
   }
   function textoSeguro(texto: string) {
     return DOMPurify.sanitize(marked.parse(texto, { async: false }) as string);
+  }
+  function sacarImagenesDeListas(contenedor: HTMLElement) {
+    contenedor.querySelectorAll('ul, ol').forEach(lista => {
+      const tarjetas: HTMLElement[] = [];
+      Array.from(lista.querySelectorAll(':scope > li')).forEach(elementoLista => {
+        const imagenes = Array.from(elementoLista.querySelectorAll('img'));
+        if (!imagenes.length) return;
+
+        const tarjeta = document.createElement('div');
+        tarjeta.className = 'player-result';
+        const informacion = document.createElement('div');
+        informacion.className = 'player-result-info';
+        const fotos = document.createElement('div');
+        fotos.className = 'player-result-photos';
+        Array.from(elementoLista.childNodes).forEach(nodo => {
+          if (nodo instanceof HTMLImageElement) fotos.append(nodo);
+          else informacion.append(nodo);
+        });
+        imagenes.forEach(imagen => {
+          if (imagen.parentElement === elementoLista) return;
+          fotos.append(imagen);
+        });
+        informacion.querySelectorAll('p').forEach(parrafo => {
+          if (!parrafo.textContent?.trim() && !parrafo.querySelector('*')) parrafo.remove();
+        });
+        tarjeta.append(informacion, fotos);
+        tarjetas.push(tarjeta);
+        elementoLista.remove();
+      });
+      if (tarjetas.length) {
+        lista.after(...tarjetas);
+        if (!lista.querySelector(':scope > li')) lista.remove();
+      }
+    });
+
+    contenedor.querySelectorAll('p').forEach(bloqueImagenes => {
+      if (!bloqueImagenes.querySelector('img')) return;
+      const informacion = bloqueImagenes.previousElementSibling;
+      if (!informacion || informacion.tagName !== 'P') return;
+
+      const tarjeta = document.createElement('div');
+      tarjeta.className = 'player-result';
+      const fotos = document.createElement('div');
+      fotos.className = 'player-result-photos';
+      informacion.before(tarjeta);
+      tarjeta.append(informacion, fotos);
+      Array.from(bloqueImagenes.querySelectorAll('img')).forEach(imagen => fotos.append(imagen));
+      bloqueImagenes.remove();
+    });
   }
   function prepararImagenesJugador(contenedor: HTMLElement) {
     contenedor.querySelectorAll<HTMLImageElement>('img').forEach(imagen => {
@@ -72,6 +128,7 @@ const list = document.querySelector<HTMLDivElement>('#conversation-list')!;
     if (m.rol === 'user') content.textContent = m.contenido;
     else {
       content.innerHTML = textoSeguro(m.contenido);
+      sacarImagenesDeListas(content);
       prepararImagenesJugador(content);
     }
     body.append(label, content);
@@ -81,6 +138,12 @@ const list = document.querySelector<HTMLDivElement>('#conversation-list')!;
   function limpiarChat() {
     messages.replaceChildren();
     conversacionId = null;
+    tonoActivo = 'amigable';
+    usarEmojis = false;
+    toneSelect.value = tonoActivo;
+    emojiToggle.checked = usarEmojis;
+    actualizarDescripcionTono();
+    actualizarEstadoEmojis();
     mostrarBienvenida(true);
     document.querySelectorAll('.conversation-item').forEach(el => el.classList.remove('active'));
   }
@@ -131,6 +194,12 @@ const list = document.querySelector<HTMLDivElement>('#conversation-list')!;
     try {
       const c = await api.obtenerConversacion(id);
       conversacionId = c.id;
+      tonoActivo = descripcionesTono.has(c.tono) ? c.tono : 'amigable';
+      usarEmojis = Boolean(c.usar_emojis);
+      toneSelect.value = tonoActivo;
+      emojiToggle.checked = usarEmojis;
+      actualizarDescripcionTono();
+      actualizarEstadoEmojis();
       messages.replaceChildren();
       mostrarBienvenida(false);
       (c.mensajes || []).forEach(renderMensaje);
@@ -164,7 +233,7 @@ const list = document.querySelector<HTMLDivElement>('#conversation-list')!;
     sendButton.disabled = true;
     desplazarAbajo();
     try {
-      const respuesta = await api.enviarMensaje(mensaje, conversacionId || undefined);
+      const respuesta = await api.enviarMensaje(mensaje, conversacionId || undefined, tonoActivo, usarEmojis);
       conversacionId = respuesta.conversacion_id;
       typing.remove();
       renderMensaje({ rol: 'model', contenido: respuesta.respuesta });
@@ -183,6 +252,37 @@ const list = document.querySelector<HTMLDivElement>('#conversation-list')!;
   }
 
   form.addEventListener('submit', e => { e.preventDefault(); void enviar(input.value); });
+  function actualizarDescripcionTono() {
+    toneDescription.textContent = descripcionesTono.get(tonoActivo) || '';
+    toneSelect.dataset.activeTone = tonoActivo;
+  }
+  function actualizarEstadoEmojis() {
+    emojiState.textContent = usarEmojis ? 'Activados' : 'Desactivados';
+    emojiToggle.setAttribute('aria-label', `Uso de emojis ${usarEmojis ? 'activado' : 'desactivado'}`);
+  }
+  async function guardarPreferenciasActuales() {
+    if (!conversacionId) return;
+    try {
+      await api.actualizarPreferencias(conversacionId, tonoActivo, usarEmojis);
+    } catch (e) {
+      aviso(`No se pudieron guardar las preferencias: ${(e as Error).message}`);
+    }
+  }
+  toneSelect.addEventListener('change', () => {
+    const seleccionado = toneSelect.value;
+    if (!descripcionesTono.has(seleccionado)) {
+      toneSelect.value = tonoActivo;
+      return;
+    }
+    tonoActivo = seleccionado;
+    actualizarDescripcionTono();
+    void guardarPreferenciasActuales();
+  });
+  emojiToggle.addEventListener('change', () => {
+    usarEmojis = emojiToggle.checked;
+    actualizarEstadoEmojis();
+    void guardarPreferenciasActuales();
+  });
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
   });
@@ -198,6 +298,23 @@ const list = document.querySelector<HTMLDivElement>('#conversation-list')!;
   } catch {
     connection.textContent = 'FastAPI no disponible';
     connection.classList.remove('online');
+  }
+  try {
+    const catalogo = await api.listarTonos();
+    tonoActivo = catalogo.tono_predeterminado;
+    catalogo.tonos.forEach(tono => {
+      descripcionesTono.set(tono.id, tono.descripcion);
+      const opcion = document.createElement('option');
+      opcion.value = tono.id;
+      opcion.textContent = `${tono.visual} ${tono.nombre}`;
+      toneSelect.append(opcion);
+    });
+    toneSelect.value = tonoActivo;
+    actualizarDescripcionTono();
+    actualizarEstadoEmojis();
+  } catch (e) {
+    toneSelect.disabled = true;
+    aviso(`No se pudieron cargar los tonos: ${(e as Error).message}`);
   }
   await cargarConversaciones();
   mostrarBienvenida(true);

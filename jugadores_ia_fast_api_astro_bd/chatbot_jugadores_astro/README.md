@@ -17,14 +17,16 @@ Abre http://localhost:4321.
 
 ## API utilizada
 Según el código FastAPI recibido:
-- `POST /api/chat` con `{ "mensaje": "...", "conversacion_id": "opcional" }`.
+- `GET /api/tonos` para cargar tonos, nombres y descripciones.
+- `POST /api/chat` con `{ "mensaje": "...", "conversacion_id": "opcional", "tono": "furioso", "usar_emojis": true }`.
 - `GET /api/conversaciones` para listar el historial.
 - `GET /api/conversaciones/{conversacion_id}` para recuperar mensajes.
 - `DELETE /api/conversaciones/{conversacion_id}` para eliminar una conversación.
 - `GET /` como comprobación básica del backend.
 
-La respuesta de chat esperada es `{ "respuesta": "...", "conversacion_id": "uuid" }`.
+La respuesta de chat incluye `{ "respuesta": "...", "conversacion_id": "uuid", "tono": "furioso", "usar_emojis": true }`.
 El frontend conserva el identificador devuelto para continuar la misma conversación.
+El selector permite elegir entre amigable, furioso, triste y amargado, además de activar o desactivar emojis. Ambas preferencias se conservan al reabrir una conversación y también pueden actualizarse mediante `PUT /api/conversaciones/{id}/preferencias`.
 
 ## CORS
 El `main.py` entregado ya permite `http://localhost:4321` y `http://127.0.0.1:4321`. Si cambias el host o puerto de Astro, agrega ese origen en `allow_origins` de FastAPI.

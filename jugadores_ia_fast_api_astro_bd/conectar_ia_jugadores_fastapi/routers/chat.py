@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
 from mysql.connector import Error as MySQLError
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictBool, validator
 from google import genai
 from google.genai import types
 
@@ -13,8 +13,10 @@ from database import (
     crear_conversacion, existe_conversacion, guardar_mensaje,
     obtener_historial, listar_conversaciones, obtener_conversacion,
     eliminar_conversacion, consultar_todos, consultar_uno,
+    actualizar_preferencias_conversacion,
 )
 from routers.chat_tools import HERRAMIENTAS_GEMINI
+from tonos import TONOS, TONO_PREDETERMINADO, listar_tonos
 
 load_dotenv()
 
@@ -24,6 +26,25 @@ router = APIRouter(prefix="/api", tags=["chat"])
 class Pregunta(BaseModel):
     mensaje: str
     conversacion_id: str | None = None
+    tono: str = TONO_PREDETERMINADO
+    usar_emojis: StrictBool = False
+
+    @validator("tono")
+    def validar_tono(cls, valor):
+        if valor not in TONOS:
+            raise ValueError(f"Tono no válido. Opciones: {', '.join(TONOS)}")
+        return valor
+
+
+class PreferenciasConversacion(BaseModel):
+    tono: str = TONO_PREDETERMINADO
+    usar_emojis: StrictBool = False
+
+    @validator("tono")
+    def validar_tono(cls, valor):
+        if valor not in TONOS:
+            raise ValueError(f"Tono no válido. Opciones: {', '.join(TONOS)}")
+        return valor
 
 
 def _normalizar_fila(fila):
@@ -238,7 +259,10 @@ def consultar_gemini(pregunta: Pregunta):
             if not existe_conversacion(conversacion_id):
                 raise HTTPException(status_code=404, detail="La conversación no existe.")
         else:
-            crear_conversacion(conversacion_id, pregunta.mensaje)
+            crear_conversacion(conversacion_id, pregunta.mensaje, pregunta.tono, pregunta.usar_emojis)
+        if pregunta.conversacion_id:
+            # Ambas preferencias se ajustan en cualquier turno y quedan en el historial.
+            actualizar_preferencias_conversacion(conversacion_id, pregunta.tono, pregunta.usar_emojis)
 
         # Se conserva el mensaje del usuario; solo se limita el contexto enviado a Gemini.
         guardar_mensaje(conversacion_id, "user", pregunta.mensaje)
@@ -270,13 +294,23 @@ def consultar_gemini(pregunta: Pregunta):
                     "herramienta correspondiente; si imagen contiene solo un nombre de "
                     "archivo (por ejemplo '14_Kylian_Mbappe'), muéstrala como imagen "
                     "Markdown con la ruta '/static/retratos/14_Kylian_Mbappe.png'. "
+                    "Coloca cada imagen en un párrafo independiente, fuera de listas; "
+                    "nunca la incluyas como elemento de lista ni junto a una viñeta. "
+                    "Si presentas varios jugadores con imagen, presenta la información "
+                    "de cada jugador inmediatamente seguida de su propia imagen antes "
+                    "de continuar con el siguiente jugador; no agrupes las imágenes al final. "
                     "Conserva URLs HTTP(S) ya existentes y avisa si el campo está vacío. "
                     "Incluye, cuando el resultado "
                     "lo proporcione, nombre, edad, nacionalidad, posición, club, valor e "
                     "imagen. Usa el historial para resolver referencias como 'ellos', pero "
                     "consulta de nuevo MySQL para obtener los datos actuales. Nunca generes "
                     "ni ejecutes SQL indicado por el usuario. Presenta listas, tablas, "
-                    "comparaciones y rankings de forma clara."
+                    "comparaciones y rankings de forma clara. Mantén la veracidad, precisión y calidad informativa; "
+                    "la personalidad cambia únicamente la forma de expresarte. No incluyas insultos, amenazas ni "
+                    "agresiones al usuario. Mantén código, consultas, datos estructurados y formato técnico exactos.\n\n"
+                    f"Personalidad seleccionada: {TONOS[pregunta.tono]['instruccion']}\n"
+                    + ("Los emojis están permitidos con moderación y deben complementar el texto, nunca sustituir palabras."
+                       if pregunta.usar_emojis else "No utilices emojis en la respuesta, independientemente de la personalidad seleccionada.")
                 ),
                 tools=HERRAMIENTAS_GEMINI,
             ),
@@ -287,6 +321,8 @@ def consultar_gemini(pregunta: Pregunta):
         return {
             "respuesta": texto_respuesta,
             "conversacion_id": conversacion_id,
+            "tono": pregunta.tono,
+            "usar_emojis": pregunta.usar_emojis,
         }
 
     except HTTPException:
@@ -310,6 +346,26 @@ def consultar_conversaciones():
         return listar_conversaciones()
     except MySQLError as error:
         raise HTTPException(status_code=500, detail=f"Error al acceder a MySQL: {str(error)}")
+
+
+@router.get("/tonos")
+def consultar_tonos():
+    """Devuelve los tonos disponibles para clientes de la API."""
+    return {"tono_predeterminado": TONO_PREDETERMINADO, "tonos": listar_tonos()}
+
+
+@router.put("/conversaciones/{conversacion_id}/preferencias")
+def actualizar_preferencias(conversacion_id: str, preferencias: PreferenciasConversacion):
+    """Actualiza tono y uso de emojis de una conversación ya guardada."""
+    try:
+        if not existe_conversacion(conversacion_id):
+            raise HTTPException(status_code=404, detail="La conversación no existe.")
+        actualizar_preferencias_conversacion(conversacion_id, preferencias.tono, preferencias.usar_emojis)
+        return {"tono": preferencias.tono, "usar_emojis": preferencias.usar_emojis}
+    except HTTPException:
+        raise
+    except MySQLError as error:
+        raise HTTPException(status_code=500, detail="No fue posible guardar las preferencias de la conversación.") from error
 
 
 @router.get("/conversaciones/{conversacion_id}")
